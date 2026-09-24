@@ -1,0 +1,31 @@
+Name:           <pkg>
+# rewritten by anda/<pkg>/update.rhai — rpm treats everything after the value on
+# a tag line as part of the value, so keep comments on their own line
+Version:        0.0.0
+Release:        1%{?dist}
+Summary:        <app> (packaged from the official upstream release)
+License:        <SPDX>
+URL:            https://<vendor>
+Source0:        <vendor-url-with-%{version}>
+Source1:        <pkg>.desktop
+BuildArch:      x86_64
+%description
+%{summary}.
+%prep
+# Copr buildroots have no network by default: copr.d/<pkg>/script.sh already
+# downloaded Source0 into the source directory. Use %setup -q -c -T -a 0 for
+# archives rpmbuild can unpack; for anything else read it from %{_sourcedir}.
+%setup -q -c -T
+cp %{_sourcedir}/<artifact-file> artifact   # + vendor digest check when published
+%install
+mkdir -p %{buildroot}%{_libdir}/<pkg> %{buildroot}%{_bindir}
+install -m0644 artifact %{buildroot}%{_libdir}/<pkg>/
+ln -s %{_libdir}/<pkg>/<bin> %{buildroot}%{_bindir}/<pkg>
+install -Dm0644 %{SOURCE1} %{buildroot}%{_datadir}/applications/<pkg>.desktop
+%files
+%{_libdir}/<pkg>/
+%{_bindir}/<pkg>
+%{_datadir}/applications/<pkg>.desktop
+%changelog
+* <date> halcyon-autobuild - 0.0.0-1
+- packaged from the upstream release

@@ -1,0 +1,192 @@
+# ci/packages.toml — the halcyon-packages build registry.
+#
+# Consumed by ci/matrix.py. One table per package; **a package without an
+# entry is not built**. The build configuration itself lives in each package's
+# anda/<pkg>/anda.hcl; this file is the dependency-order registry.
+#
+# Batches are dependency levels, not parallel groups within one job:
+# anda-build.yml runs the waves sequentially and publishes each wave to the
+# Pages repo before the next one starts — so a package may rely on anything
+# built in a lower batch (this is the job Copr did with --after-build-id /
+# --with-build-id). Packages inside one batch must therefore never depend on
+# each other.
+#
+# Build-time dependencies that Fedora 44 does not provide (glaze-static,
+# hyprtoolkit, hyprwire, ...) come from copr://lionheartp/Hyprland, which the
+# halcyon mock config (mock/halcyon-f44-x86_64.cfg, shipped in the builder
+# image) carries as a build-time repo.
+#
+# batch 0  roots: Fedora-only build deps (plus the wrapper/binary packages)
+# batch 1  first level: everything that links against batch 0
+# batch 2  hyprland-git, which links against batch 0 and batch 1
+
+# --------------------------------------------------------------- desktops
+
+# --- batch 0 ------------------------------------------------------------
+[hyprutils]
+batch = 0
+
+[hyprlang]
+batch = 0
+
+[hyprwayland-scanner]
+batch = 0
+
+[hyprland-protocols]
+batch = 0
+
+# --- batch 1 ------------------------------------------------------------
+# hyprland-qt-support needs hyprlang, so it cannot share hyprlang's batch.
+[hyprland-qt-support]
+batch = 1
+
+[aquamarine]
+batch = 1
+
+[hyprcursor]
+batch = 1
+
+[hyprgraphics]
+batch = 1
+
+[hyprland-guiutils]
+batch = 1
+
+[hyprpwcenter]
+batch = 1
+
+[hyprshutdown]
+batch = 1
+
+[noctalia-git]
+batch = 0
+
+[noctalia-greeter-git]
+batch = 0
+
+[xdg-desktop-portal-hyprland]
+batch = 1
+
+# pyprland: Hyprland companion daemon (hatchling wheel + compiled C client,
+# per the AUR PKGBUILD); version sweeps the git tags.
+[pyprland]
+batch = 0
+
+# --- batch 2 ------------------------------------------------------------
+[hyprland-git]
+batch = 2
+
+# ------------------------------------------------------------------- apps
+# bun tracks terrapkg's spec: the -baseline build of bun's release zip
+# with shell completions. Its version follows the LATEST file of oven-sh/bun.
+[bun]
+batch = 0
+
+# tealdeer: official musl binary + release-published completion files.
+[tealdeer]
+batch = 0
+
+# uv: official musl tarball (uv + uvx), completions generated at build time.
+[uv]
+batch = 0
+
+# atuin: official gnu tarball.
+[atuin]
+batch = 0
+
+# bat: official gnu tarball (man page + completions included).
+[bat]
+batch = 0
+
+# eza: official gnu tarball + separate man/completions tarballs.
+[eza]
+batch = 0
+
+# gnuplot: source build from the official SourceForge tarball (lean
+# console/cairo configuration). Version sweeps SourceForge best_release.
+[gnuplot]
+batch = 0
+
+# cava: source build from the upstream release tarball (autotools, all
+# Fedora-available audio backends enabled).
+[cava]
+batch = 0
+
+# pixi: official musl binary + completions generated at build time. (Terra
+# builds it from source with %cargo_prep_online; the project now has
+# --enable-net on, so switching to the cargo build is a follow-up option.)
+[pixi]
+batch = 0
+
+# zotero follows terrapkg's spec (install layout, desktop file, icons,
+# appstream) over the OFFICIAL prebuilt tarball — the npm source build is
+# unbuildable today (its CI artifact S3 bucket 403s for current tags, see
+# the zotero.spec header). Version sweeps the zotero/zotero git tag.
+[zotero]
+batch = 0
+
+# zen-browser follows SnenxyTengoku's COPR spec (x86_64 only, no twilight);
+# /opt/zen install + launcher script + patchelf RPATH fix.
+[zen-browser]
+batch = 0
+
+# xwiimote-ng is wired in but has never been through a validated build —
+# its first Copr build is the validation. Watch the first run.
+[xwiimote-ng]
+batch = 0
+
+# ticktick follows the AUR PKGBUILD (vendor .deb payload, launcher, SUID
+# sandbox). TickTick publishes no first-party version feed, so the version
+# sweeps the AUR package via the AUR RPC API — the AUR maintainer tracks
+# upstream releases.
+[ticktick]
+batch = 0
+
+# bitwarden: rewrap of the vendor RPM following
+# github.com/anudeepd/bitwarden-fedora-copr-ci (byte-identical payload, brp
+# hooks unset, per-version GPL text, curated AppStream metainfo). Version
+# sweeps the desktop-v releases of bitwarden/clients.
+[bitwarden]
+batch = 0
+
+# obsidian: follows the Arch Linux package (launcher with user-flags file,
+# /usr/lib/obsidian, resources icon, LicenseRef-Obsidian), with the bundled
+# Electron runtime shipped since Fedora has no system electron package. The
+# tarball sha256 is verified in the source step against the GitHub digest.
+[obsidian]
+batch = 0
+
+# ------------------------------------------------------------------- apps
+# distroshelf: GNOME container manager, meson+cargo per upstream's meson.build
+# (crates fetched during the build — the project runs --enable-net on).
+[distroshelf]
+batch = 0
+
+# ------------------------------------------------------------------ tools
+# chafa follows terrapkg's spec (upstream git-tag source build); Fedora
+# carries an older chafa, this one shadows it.
+[chafa]
+batch = 0
+
+[dust]
+batch = 0
+
+[lazygit]
+batch = 0
+
+[pandoc]
+batch = 0
+
+[starship]
+batch = 0
+
+[yazi]
+batch = 0
+
+[zellij]
+batch = 0
+
+# opencode: terminal AI coding agent, repackaged from the current release
+# tarball.
+[opencode]
+batch = 0

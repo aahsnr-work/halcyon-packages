@@ -1,0 +1,11 @@
+# local build outputs (anda build leaves anda-build/ behind)
+anda-build/
+
+# local work artefacts
+.obsidian/
+TaskNotes/
+*.tar.gz
+*.tar.bz2
+*.rpm
+*.zst
+__pycache__/

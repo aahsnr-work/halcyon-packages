@@ -1,0 +1,44 @@
+Name:    	hyprshutdown
+Version: 	0.1.1
+Release: 	3%{?dist}
+Summary: 	A graceful shutdown utility for Hyprland
+License: 	BSD-3-Clause
+URL:     	https://github.com/hyprwm/hyprshutdown
+
+Source:         %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
+
+BuildRequires: 	gcc-c++
+BuildRequires: 	cmake
+BuildRequires: 	glaze-devel
+BuildRequires: 	pkgconfig(hyprlang)
+BuildRequires: 	pkgconfig(hyprutils)
+BuildRequires: 	pkgconfig(hyprtoolkit)
+BuildRequires: 	pkgconfig(libdrm)
+BuildRequires: 	pkgconfig(pixman-1)
+BuildRequires: 	pkgconfig(wayland-client)
+BuildRequires: 	systemd-devel
+
+Requires:	(hyprland or hyprland-git)
+Requires:	systemd
+
+%description
+hyprshutdown is a graceful shutdown/logout utility for Hyprland, which prevents apps from crashing / dying unexpectedly..
+
+%prep
+%autosetup
+
+%build
+%cmake
+%cmake_build
+
+%install
+%cmake_install
+
+%files
+%license LICENSE
+%doc README.md
+%{_bindir}/hyprshutdown
+
+%changelog
+* Wed Sep 23 2026 halcyon-autobump <aahsnr041@proton.me>
+- converted to an explicit Release and changelog for the anda build

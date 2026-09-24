@@ -1,0 +1,70 @@
+# anda-publish — sign, index and deploy one batch wave to the Pages repo.
+#
+# Called from anda-build.yml between build waves. Runs in the builder
+# container (rpm-sign, gnupg2, createrepo_c, git live there). On pull requests
+# this is validation only: the artifacts are downloaded and counted, nothing is
+# signed or pushed.
+#
+# Secrets:
+#   GPG_PRIVATE_KEY    the repo's RPM signing key (armored)
+#   GPG_PASSPHRASE     its passphrase, empty for passphrase-less keys
+name: anda-publish
+
+on:
+  workflow_call:
+    inputs:
+      batch:
+        description: "Batch number whose artifacts (named '<batch>-*') to publish"
+        required: true
+        type: number
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: sign + createrepo + Pages deploy (batch ${{ inputs.batch }})
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
+      options: --cap-add=SYS_ADMIN --privileged
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Workspace safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Import the RPM signing key
+        if: github.event_name != 'pull_request'
+        id: gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Download the wave's RPMs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "${{ inputs.batch }}-*"
+          merge-multiple: true
+          path: rpms
+      - name: Split source RPMs out
+        run: |
+          set -eu
+          mkdir -p srpms
+          for f in rpms/*.src.rpm; do
+            [ -e "$f" ] || continue
+            mv -v "$f" srpms/
+          done
+      - name: Publish (rpmsign + createrepo_c + prune + gh-pages deploy)
+        if: github.event_name != 'pull_request'
+        env:
+          GPG_KEY_ID: ${{ steps.gpg.outputs.fingerprint }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: ci/publish.sh rpms srpms
+      - name: Pull request — validation only
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "pull request: $(find rpms -name '*.rpm' | wc -l) RPM(s) built; nothing published"

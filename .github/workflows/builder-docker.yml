@@ -1,0 +1,32 @@
+name: builder-image
+permissions:
+  contents: read
+  packages: write
+on:
+  push:
+    branches: [main]
+    paths: [".github/builder/**", "mock/**", ".github/workflows/builder-docker.yml"]
+  pull_request:
+    paths: [".github/builder/**", "mock/**", ".github/workflows/builder-docker.yml"]
+  workflow_dispatch:
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .github/builder/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

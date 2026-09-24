@@ -1,0 +1,262 @@
+# anda-build — build halcyon-packages with anda (mock backend) and publish to
+# GitHub Pages.
+#
+# Replaces copr-build.yml (copr-cli buildcustom). Copr used to own the build
+# farm, the signing and the repo serving; now:
+#
+#   manifest   ci/matrix.py selects packages from the git push (changed dir +
+#              every higher batch — copr/submit.py's cascade semantics) and
+#              emits one build_matrix per batch, like terra's `anda ci`
+#   buildN     `anda build anda/<pkg> -c halcyon-f44-x86_64` in the builder
+#              container (mock chroot; network on; the mock config carries the
+#              Fedora 44, own-repo and lionheartp/Hyprland repos)
+#   publishN   sign (rpmsign) + createrepo_c + prune superseded versions +
+#              deploy gh-pages, so wave N+1's buildroot sees wave N's output.
+#              PRs skip the actual deploy (validation only — deps come from
+#              the last published state).
+#
+# Wave order (needs: chain) is what guarantees the batch order that Copr
+# enforced with --after-build-id/--with-build-id.
+name: anda-build
+
+on:
+  push:
+    branches: [main]
+    paths: ["anda/**", "ci/**", "mock/**", ".github/builder/**", "anda.hcl", ".github/workflows/anda-build.yml"]
+  pull_request:
+    paths: ["anda/**", "ci/**", "mock/**", ".github/builder/**", "anda.hcl", ".github/workflows/anda-build.yml"]
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Packages to build (space separated); empty = all"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: anda-build
+  cancel-in-progress: false
+
+env:
+  BUILDER_IMAGE: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
+  MOCK_CONFIG: halcyon-f44-x86_64
+
+jobs:
+  validate:
+    name: Validate the registry
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Shell syntax (publish tooling + any package helper scripts)
+        run: |
+          set -eu
+          sh -n ci/publish.sh
+          for f in anda/*/*.sh; do
+            [ -e "$f" ] || continue
+            sh -n "$f"
+          done
+      - name: Python syntax
+        run: python3 -m py_compile ci/*.py
+      - name: Registry consistency + build plan
+        run: |
+          set -eu
+          python3 ci/matrix.py --list
+          BEFORE="${{ github.event.before }}"
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+             && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            python3 ci/matrix.py --list --since "$BEFORE"
+          fi
+
+  manifest:
+    name: Build matrix (per batch)
+    needs: validate
+    runs-on: ubuntu-latest
+    outputs:
+      batches: ${{ steps.split.outputs.batches }}
+      batch0: ${{ steps.split.outputs.batch0 }}
+      batch1: ${{ steps.split.outputs.batch1 }}
+      batch2: ${{ steps.split.outputs.batch2 }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Resolve the selection
+        id: selection
+        env:
+          ONLY: ${{ inputs.only }}
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -eu
+          if [ -n "${ONLY:-}" ]; then
+            echo "args=--only ${ONLY}" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT" = push ] && [ -n "${BEFORE:-}" ] \
+               && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+               && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            echo "args=--since ${BEFORE}" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Split the matrix into batch waves
+        id: split
+        env:
+          SELECT_ARGS: ${{ steps.selection.outputs.args }}
+        run: |
+          set -eu
+          # Word splitting on SELECT_ARGS is intended — it is a flag list.
+          # shellcheck disable=SC2086
+          python3 ci/matrix.py $SELECT_ARGS | python3 - "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          out = sys.argv[1]
+          matrix, batches = [], []
+          for line in sys.stdin:
+              if line.startswith("build_matrix="):
+                  matrix = json.loads(line[len("build_matrix="):].strip())
+              elif line.startswith("batches="):
+                  batches = line[len("batches="):].strip().split(",")
+          if not matrix:
+              print("no entries")
+          def with_output(name, value):
+              with open(f"{out}", "a") as fh:
+                  fh.write(f"{name}={value}\n")
+          with_output("batches", ",".join(batches))
+          for b in batches:
+              entries = [e for e in matrix if e["labels"]["batch"] == b]
+              with_output(f"batch{b}", json.dumps(entries, sort_keys=True))
+              print(f"batch {b}: {len(entries)} package(s)")
+          PY
+
+  build0:
+    name: "batch 0"
+    needs: manifest
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      needs.manifest.outputs.batch0 != ''
+    strategy:
+      matrix:
+        pkg: ${{ fromJson(needs.manifest.outputs.batch0) }}
+      fail-fast: false
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.BUILDER_IMAGE }}
+      options: --cap-add=SYS_ADMIN --privileged
+    steps:
+      - name: Workspace safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@v7
+      - name: anda build
+        run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
+      - name: Upload RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: "0-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
+          path: |
+            anda-build/rpm/rpms/*
+            anda-build/rpm/srpm/*
+          if-no-files-found: error
+
+  publish0:
+    name: "publish batch 0"
+    needs: [manifest, build0]
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      (needs.build0.result == 'success' || needs.build0.result == 'skipped') &&
+      needs.manifest.outputs.batch0 != ''
+    uses: ./.github/workflows/anda-publish.yml
+    secrets: inherit
+    with:
+      batch: 0
+
+  build1:
+    name: "batch 1"
+    needs: [manifest, publish0]
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      (needs.publish0.result == 'success' || needs.publish0.result == 'skipped') &&
+      needs.manifest.outputs.batch1 != ''
+    strategy:
+      matrix:
+        pkg: ${{ fromJson(needs.manifest.outputs.batch1) }}
+      fail-fast: false
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.BUILDER_IMAGE }}
+      options: --cap-add=SYS_ADMIN --privileged
+    steps:
+      - name: Workspace safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@v7
+      - name: anda build
+        run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
+      - name: Upload RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: "1-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
+          path: |
+            anda-build/rpm/rpms/*
+            anda-build/rpm/srpm/*
+          if-no-files-found: error
+
+  publish1:
+    name: "publish batch 1"
+    needs: [manifest, build1]
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      (needs.build1.result == 'success' || needs.build1.result == 'skipped') &&
+      needs.manifest.outputs.batch1 != ''
+    uses: ./.github/workflows/anda-publish.yml
+    secrets: inherit
+    with:
+      batch: 1
+
+  build2:
+    name: "batch 2"
+    needs: [manifest, publish1]
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      (needs.publish1.result == 'success' || needs.publish1.result == 'skipped') &&
+      needs.manifest.outputs.batch2 != ''
+    strategy:
+      matrix:
+        pkg: ${{ fromJson(needs.manifest.outputs.batch2) }}
+      fail-fast: false
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.BUILDER_IMAGE }}
+      options: --cap-add=SYS_ADMIN --privileged
+    steps:
+      - name: Workspace safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@v7
+      - name: anda build
+        run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
+      - name: Upload RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: "2-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
+          path: |
+            anda-build/rpm/rpms/*
+            anda-build/rpm/srpm/*
+          if-no-files-found: error
+
+  publish2:
+    name: "publish batch 2"
+    needs: [manifest, build2]
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      (needs.build2.result == 'success' || needs.build2.result == 'skipped') &&
+      needs.manifest.outputs.batch2 != ''
+    uses: ./.github/workflows/anda-publish.yml
+    secrets: inherit
+    with:
+      batch: 2
