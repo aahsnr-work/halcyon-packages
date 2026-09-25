@@ -157,7 +157,7 @@ jobs:
       - name: anda build
         run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
       - name: Upload RPMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "0-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
           path: |
@@ -201,7 +201,7 @@ jobs:
       - name: anda build
         run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
       - name: Upload RPMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "1-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
           path: |
@@ -245,7 +245,7 @@ jobs:
       - name: anda build
         run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
       - name: Upload RPMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "2-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
           path: |
@@ -289,7 +289,7 @@ jobs:
       - name: anda build
         run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
       - name: Upload RPMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "3-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
           path: |
@@ -332,7 +332,7 @@ jobs:
       - name: anda build
         run: anda build -c "$MOCK_CONFIG" anda/texlive-texmf
       - name: Upload RPMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "4-x86_64-texlive-texmf"
           path: |
