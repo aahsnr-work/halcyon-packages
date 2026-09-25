@@ -16,7 +16,7 @@ BuildRequires:  mesa-libEGL-devel
 
 BuildRequires:  pkgconfig(gbm)
 BuildRequires:  pkgconfig(hwdata)
-BuildRequires:  pkgconfig(hyprutils)
+BuildRequires:  pkgconfig(hyprutils) >= 0.8.0
 BuildRequires:  pkgconfig(hyprwayland-scanner)
 BuildRequires:  pkgconfig(libdisplay-info)
 BuildRequires:  pkgconfig(libdrm)
