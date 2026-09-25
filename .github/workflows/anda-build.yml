@@ -350,36 +350,4 @@ jobs:
     with:
       batch: 4
       target: r2
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ env.BUILDER_IMAGE }}
-      options: --cap-add=SYS_ADMIN --privileged
-    steps:
-      - name: Workspace safe
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - uses: actions/checkout@v7
-      - name: anda build
-        run: anda build -c "$MOCK_CONFIG" anda/texlive-texmf
-      - name: Upload RPMs
-        uses: actions/upload-artifact@v4
-        with:
-          name: "3-x86_64-texlive-texmf"
-          path: |
-            anda-build/rpm/rpms/*
-            anda-build/rpm/srpm/*
-          if-no-files-found: error
-
-  publish3:
-    name: "publish batch 3 — texlive to R2"
-    needs: [manifest, build3]
-    if: >
-      always() &&
-      needs.manifest.result == 'success' &&
-      (needs.build3.result == 'success' || needs.build3.result == 'skipped') &&
-      needs.manifest.outputs.batch3 != ''
-    uses: ./.github/workflows/anda-publish.yml
-    secrets: inherit
-    with:
-      batch: 3
-      target: r2
 

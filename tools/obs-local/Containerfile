@@ -1,0 +1,9 @@
+# obs-local — osc + obs-build + podman on Fedora 44, for local package
+# builds that mirror the build.opensuse.org backend.
+#
+#   podman build -t localhost/obs-local:44 - < tools/obs-local/Containerfile
+#
+# Driven by tools/obs-local.sh; see notes/obs-local-builds.md for the
+# fidelity limits (server-side buildinfo, vm-types, network isolation).
+FROM registry.fedoraproject.org/fedora-minimal:44
+RUN dnf in -y osc obs-build podman git-core && dnf clean packages dbcache

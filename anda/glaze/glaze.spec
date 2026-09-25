@@ -49,6 +49,6 @@ Development files for %{name}.
 %{_includedir}/%{name}/
 
 %changelog
-* Thu Sep 25 2026 halcyon-autobump <aahsnr041@proton.me>
+* Fri Sep 25 2026 halcyon-autobump <aahsnr041@proton.me>
 - initial import from LionHeartP/hyprlandRPM (explicit Release + changelog,
   no debug packages) — previously supplied by copr lionheartp/Hyprland
