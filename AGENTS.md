@@ -133,12 +133,7 @@ GPG_KEY_ID=<fpr> ci/publish-r2.sh rpms srpms   # R2 bucket (texlive-texmf)
 - Version bumps are automatic (`anda-update.yml` opens one daily bump PR;
   sweepers are `update.rhai` scripts using andax globals `gh()`,
   `rpm.version()` … — see `templates/update.rhai.tmpl` for the API). Merging
-  the bump PR pushes to main, which triggers the Actions rebuild — and the
-  GitHub→OBS webhook (`notes/obs-migration.md`), since scmsync does NOT
-  watch GitHub on its own. Locally, `tools/obs-local.sh [--faithful] <pkg>`
-  mirrors an OBS build (see `notes/obs-local-builds.md`); the OBS hybrid
-  policy keeps the network-isolated packages (rust source builds, nwg-look,
-  distroshelf, texlive) on Actions.
+  the bump PR is what triggers the rebuild.
 - **Local builds run strictly ONE AT A TIME** (`podman`, never docker —
   docker's AppArmor/seccomp stack breaks setuid-root `umount` at loader time,
   which silently breaks mock's chroot teardown on some host kernels).
