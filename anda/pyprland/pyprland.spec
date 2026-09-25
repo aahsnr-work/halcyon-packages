@@ -45,6 +45,8 @@ gcc -o pypr-client client/pypr-client.c
 
 %install
 %pyproject_install
+# write the pyproject-files list that %files -f consumes below
+%pyproject_save_files -l pyprland
 # PKGBUILD package(): install the compiled client and the license
 install -Dpm755 pypr-client %{buildroot}%{_bindir}/pypr-client
 install -Dpm644 LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
