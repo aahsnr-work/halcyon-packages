@@ -180,3 +180,74 @@ package plus every higher batch. Secrets: `GPG_PRIVATE_KEY` (+ optional
 - **TeX Live**: `tools/texlive-splitter/` generates Arch-style grouped
   specs from a dated snapshot, but its build/publish steps are not wired into
   the anda pipeline (see `TODO.md` — Fedora ships the groups anyway).
+
+## Recreating this repository from scratch
+
+Recipe for a new GitHub repo carrying this same content, in strict order.
+The ordering matters: **the Actions secrets must exist while the repo is
+still empty** — the first content push already triggers `builder-image` and
+the full `anda-build` cascade, and a push without secrets in place makes
+the publish waves fail and re-running is wasted effort.
+
+Prerequisites: `gh` authenticated (`gh auth login`), the repository content
+on disk, and the RPM signing key. Either reuse the existing
+`halcyon-packages` GnuPG key or generate a fresh one for the new repo
+(`notes/anda-setup.md` stage 2 has the `gpg --batch` recipe; uid
+`packages@halcyon.invalid`).
+
+### 1. Create the empty repo (no content yet)
+
+```bash
+gh repo create OWNER/NAME --public   # public: GitHub Pages requires it
+```
+
+### 2. Secrets — while the repo is still empty
+
+```bash
+# the RPM-signing key that ci/publish.sh imports; its public half is what
+# dnf checks against (repo/halcyon-packages.repo gpgkey=) and is exported to
+# Pages automatically on every publish
+gh secret set GPG_PRIVATE_KEY --repo OWNER/NAME \
+  < <(gpg --armor --export-secret-keys packages@halcyon.invalid)
+gh secret set GPG_PASSPHRASE --repo OWNER/NAME   # skip for a passphrase-less key
+
+# the texlive wave publishes to Cloudflare R2 (ci/publish-r2.sh)
+gh secret set R2_ACCESS_KEY_ID     --repo OWNER/NAME
+gh secret set R2_SECRET_ACCESS_KEY --repo OWNER/NAME
+gh secret set R2_ENDPOINT          --repo OWNER/NAME   # https://<account>.r2.cloudflarestorage.com
+gh variable set R2_BUCKET          --repo OWNER/NAME   # optional, default halcyon-packages
+gh variable set R2_LOCAL_HOST      --repo OWNER/NAME   # optional, public baseurl without scheme
+```
+
+### 3. Push the content
+
+```bash
+git init -b main
+git remote add origin https://github.com/OWNER/NAME.git
+git add -A && git commit -m "initial import"
+git push -u origin main
+```
+
+What the push sets off, unattended:
+
+1. `builder-image` builds and publishes `ghcr.io/OWNER/halcyon-builder:f44`
+   (fedora-minimal + anda + mock + the halcyon mock config).
+2. `anda-build`'s validate job **waits for that image to be green first**,
+   then resolves the registry (ci/packages.toml) and runs the batch waves:
+   0 → 3 publishing to Pages, wave 4 (texlive-texmf) publishing to R2.
+   Wave N+1's buildroot installs wave N's output from the published repo.
+3. `anda-update` sweeps upstream versions daily (04:17 UTC) and opens one
+   bump PR; merging it re-runs only what changed plus higher batches.
+
+### 4. After the first publish wave
+
+Settings → Pages → Source: *Deploy from a branch*, branch `gh-pages`, path
+`/` — the first `publish0` seeds that branch; until then leave Pages
+unconfigured. The dnf repo then lives at
+`https://OWNER.github.io/NAME/repo/f44/x86_64/` (the gpgkey sits one level
+up). The texlive set lands under `R2_LOCAL_HOST/texlive/f44/x86_64/`.
+
+Notes: local builds never need any of this — the podman one-liner at the top
+of this file is self-contained. If the texlive repo is served under a custom
+domain, point the mock config's `[halcyon-texlive]` baseurl and the R2
+variables at it; the checked-in placeholder is `r2.halcyon-packages.example.com`.
