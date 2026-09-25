@@ -48,6 +48,18 @@ else
     (cd pages && git rm -rqf . 2>/dev/null || true)
 fi
 
+# --- 1b. Git LFS for the RPM store --------------------------------------------
+# Several packages exceed GitHub's 100 MB per-file git limit (zotero, obsidian,
+# bitwarden, ticktick, ...) — the store tracks all RPMs in LFS so the push is
+# never rejected. Needs git-lfs in the builder image; the quota (free tier:
+# 1 GB storage + 1 GB/month bandwidth) is the store's real budget — see the
+# README's from-scratch recipe.
+git lfs install
+(
+    cd pages
+    git lfs track 'repo/f44/x86_64/*.rpm' 'repo/f44/source/*.rpm'
+)
+
 # --- 2. sign everything this wave produced -----------------------------------
 export GNUPGHOME="${GNUPGHOME:-$HOME/.gnupg}"
 sign_args=(--define "_gpg_name $GPG_KEY_ID")
@@ -120,8 +132,10 @@ du -sh "$PAGES"
 
 # --- 6. deploy ---------------------------------------------------------------
 cd "$PAGES"
-git add -A repo
-if [ -z "$(git status --porcelain -- repo)" ]; then
+# -A (not -A repo): the .gitattributes that git lfs track wrote must be
+# committed too, or the LFS patterns are lost on the next clone
+git add -A
+if [ -z "$(git status --porcelain)" ]; then
     echo "publish: nothing changed"
     exit 0
 fi

@@ -13,7 +13,7 @@ RUN dnf in -y --nogpgcheck --repo=terra terra-gpg-keys && \
     dnf in -y \
         anda anda-srpm-macros \
         mock mock-scm \
-        createrepo_c rpm-sign gnupg2 \
+        createrepo_c rpm-sign gnupg2 git-lfs \
         rpmdevtools rpm-build \
         dnf5-plugins git-core jq gh rclone \
         unzip wget less mold sudo @buildsys-build && \

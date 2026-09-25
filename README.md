@@ -219,6 +219,25 @@ gh variable set R2_BUCKET          --repo OWNER/NAME   # optional, default halcy
 gh variable set R2_LOCAL_HOST      --repo OWNER/NAME   # optional, public baseurl without scheme
 ```
 
+**Git LFS — required, no setup needed.** Several packages exceed GitHub's
+hard 100 MB per-file git limit (zotero, obsidian, bitwarden, ticktick, …),
+so `ci/publish.sh` tracks every RPM in the Pages store with Git LFS
+(`repo/f44/**/*.rpm` patterns; the builder image carries `git-lfs`). Know
+the quota before relying on it — on GitHub's free plan LFS gives **1 GB of
+storage and 1 GB/month of bandwidth**:
+
+- *storage*: the whole Pages store (every package's latest binary + source
+  RPM) lives in LFS and counts against the 1 GB — the current store is close
+  to it, and pruning only keeps the newest versions.
+- *bandwidth*: every publish re-downloads the existing LFS objects (the
+  repodata rebuild needs real bytes for every RPM in the store), so each
+  cascade burns roughly the store's size in bandwidth.
+
+If a publish fails with a quota/billing error, either purchase an LFS data
+pack (Settings → Billing → Git LFS Data) or move the offending packages to
+the R2 wave the way onlyoffice-desktopeditors is (batch 4 in
+`ci/packages.toml`).
+
 ### 3. Push the content
 
 ```bash
