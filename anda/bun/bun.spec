@@ -67,7 +67,7 @@ done
 
 install -Dpm755 bun -t %buildroot%_bindir
 install -Dm644 bun.zsh %buildroot%zsh_completions_dir/_bun
-install -Dm644 bun.bash -t %buildroot%bash_completions_dir
+install -Dm644 bun.bash %{buildroot}%bash_completions_dir/bun
 install -Dm644 bun.fish -t %buildroot%fish_completions_dir
 ln -s bun %buildroot%_bindir/bunx
 

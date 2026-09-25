@@ -1,6 +1,6 @@
 # local build outputs (anda build leaves anda-build/ behind)
 anda-build/
-
+tmp/
 # local work artefacts
 .obsidian/
 TaskNotes/
@@ -9,3 +9,5 @@ TaskNotes/
 *.rpm
 *.zst
 __pycache__/
+# texlive-pkg tlpdb fetch cache
+.cache/

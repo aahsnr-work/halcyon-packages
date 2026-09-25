@@ -12,7 +12,7 @@ machine.
 | 2     | this code pushed to a **public** GitHub repository `halcyon-packages` |
 | 3     | the builder image `ghcr.io/<owner>/halcyon-builder:f44`               |
 | 4     | a GPG signing key wired up (`GPG_PRIVATE_KEY` secret)                 |
-| 5     | 40 packages built in 3 batch waves, published on GitHub Pages         |
+| 5     | all packages built in 3 batch waves, published on GitHub Pages        |
 | 6     | the repo enabled on any Fedora 44 machine                             |
 
 Related documents: `README.md` (layout + how a build works), `TODO.md`
@@ -72,7 +72,6 @@ Verify the default branch is `main` (the workflows trigger on `main`):
 | `ci/publish.sh`                        | sign + createrepo_c + prune + gh-pages deploy                                                 |
 | `mock/halcyon-f44-x86_64.cfg`          | the buildroot definition (shipped in the builder image)                                       |
 | `.github/builder/Dockerfile`           | the builder image (mock, anda, signing tooling)                                               |
-| `andax/`                               | removed — sweepers are self-contained                                                         |
 | `.github/workflows/anda-build.yml`     | validate + wave builds + publish on push/PR/manual                                            |
 | `.github/workflows/anda-publish.yml`   | the reusable per-wave publish job                                                             |
 | `.github/workflows/anda-update.yml`    | daily version sweep → one bump PR                                                             |
@@ -165,7 +164,7 @@ python3 ci/matrix.py --list        # print the resolved plan (40 pkgs, 3 batches
 gh workflow run anda-build.yml     # real: 3 sequential waves
 ```
 
-Each build is `anda build anda/<pkg> -c halcyon-f44-x86_64` (mock backend)
+Each build is `anda build <pkg> -c halcyon-f44-x86_64` (mock backend)
 inside the builder container; each publish signs + indexes + deploys to
 Pages. The wave chain (`needs`) guarantees the order; the Pages publish
 between waves is what the lower batch's dependents install from.
@@ -173,13 +172,13 @@ between waves is what the lower batch's dependents install from.
 Batch layout (must stay contiguous; packages inside one batch never depend on
 each other):
 
-- **batch 0** — 29 packages: the CLI-tool set (`atuin`, `bat`, `cava`,
+- **batch 0** — 33 packages: the CLI-tool set (`atuin`, `bat`, `cava`,
   `chafa`, `dust`, `eza`, `gnuplot`, `lazygit`, `pandoc`, `pixi`,
   `starship`, `tealdeer`, `uv`, `yazi`, `zellij`), vendor apps
-  (`bitwarden`, `bun`, `distroshelf`, `obsidian`, `opencode`, `ticktick`,
-  `xwiimote-ng`, `zen-browser`, `zotero`) and the Hyprland/noctalia roots
-  (`hyprland-protocols`, `hyprlang`, `hyprutils`, `hyprwayland-scanner`,
-  `noctalia-git`, `noctalia-greeter-git`, `pyprland`)
+  (`bitwarden`, `bun`, `distroshelf`, `nwg-look`, `obsidian`, `opencode`,
+  `qt6ct`, `ticktick`, `xwiimote-ng`, `zotero`) and the
+  Hyprland/noctalia roots (`hyprland-protocols`, `hyprlang`, `hyprutils`,
+  `hyprwayland-scanner`, `noctalia-git`, `noctalia-greeter-git`, `pyprland`)
 - **batch 1** — 8 packages: `aquamarine`, `hyprcursor`, `hyprgraphics`,
   `hyprland-guiutils`, `hyprland-qt-support`, `hyprpwcenter`,
   `hyprshutdown`, `xdg-desktop-portal-hyprland` — link against batch 0
@@ -236,7 +235,7 @@ packaged here (see TODO.md).
 | rebuild one package      | Actions → anda-build → Run workflow, `only = <pkg>` (also builds its higher batches)                                                  |
 | upstream version bumps   | automatic — `anda-update.yml` opens one PR/day; review & merge                                                                        |
 | manual version check     | `GITHUB_TOKEN=$(gh auth token) anda update` locally                                                                                   |
-| local package build      | `podman run --rm -it --privileged -v "$PWD":/h -w /h ghcr.io/<owner>/halcyon-builder:f44 anda build anda/<pkg> -c halcyon-f44-x86_64` |
+| local package build      | `podman run --rm -it --privileged -v "$PWD":/h -w /h ghcr.io/<owner>/halcyon-builder:f44 anda build <pkg> -c halcyon-f44-x86_64` |
 | manual publish of a wave | download the run's artifacts and `GPG_KEY_ID=<fpr> ci/publish.sh rpms srpms`                                                          |
 | change the buildroot     | edit `mock/halcyon-f44-x86_64.cfg`; `builder-docker.yml` rebuilds the image                                                           |
 
@@ -272,14 +271,15 @@ built.
 
 ## 8. Package matrix
 
-**Legend** — all 40 packages are registered; the open items are the two
+**Legend** — the 42 hand-maintained packages plus the 388 generated
+  texlive packages (see TODO.md) are registered; the open items are the two
 never-validated builds.
 
 > Built status: **none yet** — the first anda run has not happened. After it,
 > the Actions run page + `repo/f44/x86_64/repodata/` reflect the live status
 > of exactly the 40 rows below.
 
-### Registered — 40 packages in 3 batches (the repository's contents)
+### Registered — 42 packages in batches 0–2 + the grouped texlive-texmf (batch 3)
 
 |   # | package                     | batch | version tracked      | type                                                              |
 | --: | --------------------------- | ----- | -------------------- | ----------------------------------------------------------------- |
@@ -312,7 +312,6 @@ never-validated builds.
 |  27 | xwiimote-ng                 | 0     | 3.0.1                | source build — **never built anywhere**                           |
 |  28 | yazi                        | 0     | 26.9.1               | wrapper                                                           |
 |  29 | zellij                      | 0     | 0.45.1               | wrapper                                                           |
-|  30 | zen-browser                 | 0     | 1.22.2b              | vendor tarball (SnenxyTengoku spec; x86_64 only, no twilight)     |
 |  31 | zotero                      | 0     | 10.0.3               | wrapper — terrapkg's spec layout (npm source build dormant)       |
 |  32 | aquamarine                  | 1     | 0.15.1               | source build (hyprwm)                                             |
 |  33 | hyprcursor                  | 1     | 0.1.13               | source build (hyprwm)                                             |
@@ -331,7 +330,7 @@ never-validated builds.
 | hyprtoolkit, hyprwire, glaze(-static), wlroots | `lionheartp/Hyprland` COPR (build + runtime) | packaging them here is the main self-containment TODO — `hyprland-guiutils`/`hyprpwcenter`/`hyprshutdown` link `libhyprtoolkit` at runtime                                                                                           |
 | bazaar                                         | COPR `ublue-os/packages`                     | user decision (2026-09-22): installed from ublue-os/packages, not built here (their f44 build is 0.9.3-4; recent builds failing)                                                                                                     |
 | bazzite-portal                                 | Terra repo (`repos.fyralabs.com/terra44`)    | user decision (2026-09-22): installed from Terra, not built here                                                                                                                                                                     |
-| TeX Live groups                                | not needed — Fedora ships them               | install `texlive-scheme-small`/`-medium`/`-full` from Fedora; individual files resolve via file provides (`dnf install 'tex(beamer.cls)'` → `texlive-beamer`). `tools/texlive-splitter/` remains a reference for Arch-style grouping |
+| TeX Live (Fedora's scheme packages)             | superseded for this image                    | this repo builds the Arch-style grouped `texlive-texmf` (scheme-full, no docs) and serves it from the R2 bucket — `tools/texlive-splitter/` regenerates it per snapshot |
 
 ---
 
@@ -367,8 +366,8 @@ never-validated builds.
               changed pkgs + every higher batch, split into batch waves
                         │
                         ▼
-   ┌──────────── wave 0 (matrix: 29 packages, parallel) ─────────────┐
-   │ anda build anda/<pkg> -c halcyon-f44-x86_64                     │
+   ┌──────────── wave 0 (matrix: 33 packages, parallel) ─────────────┐
+   │ anda build <pkg> -c halcyon-f44-x86_64                     │
    │   container: ghcr.io/<owner>/halcyon-builder:f44 (privileged)   │
    │   mock --buildsrpm (URL sources fetched on the host)            │
    │   mock --rebuild in halcyon-f44-x86_64:                         │

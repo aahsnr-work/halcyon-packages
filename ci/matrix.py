@@ -3,8 +3,14 @@
 
 Replaces copr/submit.py's selection logic and produces output in the same
 `build_matrix=<json>` shape as `anda ci` (terrapkg/packages autobuild.yml), so
-the workflow stays terra-shaped. Entries: {"pkg": "anda/<name>", "arch":
+the workflow stays terra-shaped. Entries: {"pkg": "anda/<name>/pkg", "arch":
 "x86_64", "labels": {}}.
+
+The `pkg` value is anda's own project key: a package manifest lives at
+`anda/<name>/anda.hcl` with the key `project pkg`, and anda prefixes nested
+project names with their directory (`anda/<name>/pkg`) — the same shape
+terrapkg/packages gets from `anda ci` and feeds straight to
+`anda build <pkg> -c halcyon-f44-x86_64`.
 
 Selection semantics (copied from copr/submit.py --since):
 
@@ -63,15 +69,28 @@ def git_lines(*args: str) -> list[str]:
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
 
 
+def package_paths(name: str) -> tuple[Path, Path]:
+    """Spec + manifest locations for a registry name: hand-maintained
+    packages live flat under anda/<name>/, the generated texlive set under
+    anda/texlive/<name>/."""
+    base = REPO_ROOT / "anda" / name
+    spec = base / f"{name}.spec"
+    if not (spec).is_file():
+        base = REPO_ROOT / "anda" / "texlive" / name
+        spec = base / f"{name}.spec"
+    return base, spec
+
+
 def load_packages() -> dict[str, dict]:
     with open(PACKAGES_FILE, "rb") as fh:
         data = tomllib.load(fh)
     pkgs: dict[str, dict] = {}
     for name, entry in data.items():
-        if not (REPO_ROOT / "anda" / name / f"{name}.spec").is_file():
-            die(f"[{name}]: anda/{name}/{name}.spec does not exist")
-        if not (REPO_ROOT / "anda" / name / "anda.hcl").is_file():
-            die(f"[{name}]: anda/{name}/anda.hcl does not exist")
+        base, spec = package_paths(name)
+        if not spec.is_file():
+            die(f"[{name}]: {spec} does not exist")
+        if not (base / "anda.hcl").is_file():
+            die(f"[{name}]: {base}/anda.hcl does not exist")
         pkgs[name] = {"batch": int(entry.get("batch", 0))}
     if not pkgs:
         die(f"{PACKAGES_FILE}: no packages defined")
@@ -144,8 +163,13 @@ def select_since(pkgs: dict[str, dict], rev: str) -> set[str]:
 
 def entries(names: set[str], pkgs: dict[str, dict], labels: dict[str, str]):
     for name in sorted(names):
+        # hand-maintained packages live at anda/<name>/, the generated
+        # texlive set at anda/texlive/<name>/ (anda's project keys follow
+        # the directories; strip_prefix/strip_suffix give the alias)
+        pkg_path = f"anda/{name}" if (REPO_ROOT / "anda" / name / "anda.hcl").is_file() \
+            else f"anda/texlive/{name}"
         yield {
-            "pkg": f"anda/{name}",
+            "pkg": f"{pkg_path}/pkg",
             "arch": ARCH,
             "labels": {"batch": str(pkgs[name]["batch"]), **labels},
         }

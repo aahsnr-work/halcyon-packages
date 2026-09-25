@@ -12,6 +12,9 @@ Summary:        AI coding agent for the terminal
 License:        MIT
 URL:            https://opencode.ai
 Source0:        https://registry.npmjs.org/@opencode%2Fcli-linux-x64/-/cli-linux-x64-%{version}.tgz
+# prebuilt foreign binary: no debug sources to collect
+%define debug_package %{nil}
+
 BuildArch:      x86_64
 %description
 AI coding agent built for the terminal, from the upstream v2 release binary.

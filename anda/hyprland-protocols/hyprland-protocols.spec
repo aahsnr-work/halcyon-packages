@@ -8,7 +8,7 @@ License:        BSD-3-Clause
 URL:            https://github.com/hyprwm/hyprland-protocols
 Source:         %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
-BuildRequires:  meson
+BuildRequires:  cmake
 
 %description
 %{summary}.
@@ -25,12 +25,14 @@ Summary:        Wayland protocol extensions for Hyprland
 
 
 %build
-%meson
-%meson_build
+# upstream switched from meson to cmake at v0.7.1 (the tarball carries
+# CMakeLists.txt; it installs the protocol XMLs and the pkg-config file)
+%cmake
+%cmake_build
 
 
 %install
-%meson_install
+%cmake_install
 
 
 %files devel

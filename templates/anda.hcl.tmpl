@@ -1,10 +1,10 @@
 # anda.hcl.tmpl — starting point for a new package directory anda/<pkg>/.
 #
 # Every registered package needs one; anda discovers the repository's
-# manifests recursively from the root anda.hcl (config { strip_prefix =
-# "anda/" }). `anda build anda/<pkg> -c halcyon-f44-x86_64` builds it; the
-# batch (dependency level) goes in ci/packages.toml, the version sweep in
-# templates/update.rhai.tmpl.
+# manifests recursively from the root anda.hcl. With the root config's
+# strip_prefix/strip_suffix, `anda build <pkg> -c halcyon-f44-x86_64` builds
+# it; the batch (dependency level) goes in ci/packages.toml, the version
+# sweep in templates/update.rhai.tmpl.
 project pkg {
 	arches = ["x86_64"]
 	rpm {

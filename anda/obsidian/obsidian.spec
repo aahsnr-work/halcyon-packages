@@ -13,7 +13,7 @@
 #     when upstream publishes none (also resolves the old deferred blocker).
 #   * options=(!strip) -> debug_package/__os_install_post nil.
 %global             full_name obsidian
-%global             digest
+%global             digest none
 %global             debug_package %{nil}
 %global             __os_install_post %{nil}
 
@@ -39,9 +39,9 @@ plain text Markdown files. You can add custom permanent flags for Obsidian in
 %setup -q -c -T -a 0
 
 # verify the vendored tarball against the digest upstream publishes on the
-# release (Arch makepkg checksum; update.rhai pins %%global digest, empty
+# release (Arch makepkg checksum; update.rhai pins %%global digest, 'none'
 # when upstream publishes none).
-if [ -n '%{digest}' ]; then
+if [ '%{digest}' != 'none' ]; then
     actual="$(sha256sum %{_sourcedir}/obsidian-%{version}.tar.gz | cut -d' ' -f1)"
     if [ "$actual" != '%{digest}' ]; then
         echo "obsidian: sha256 mismatch (expected %{digest}, got $actual)" >&2
@@ -63,7 +63,9 @@ install -dm755 %{buildroot}%{_libdir}/obsidian
 %__install -Dm644 %{SOURCE2} -t %{buildroot}%{_datadir}/applications
 
 # Arch: install -Dm644 resources/icon.png -> hicolor 512x512
-%__install -Dm644 %{_libdir}/obsidian/resources/icon.png \
+# (source of the icon is the buildroot copy made above; the system
+# %{_libdir} never exists inside the mock sandbox)
+%__install -Dm644 %{buildroot}%{_libdir}/obsidian/resources/icon.png \
     %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/%{full_name}.png
 
 %__install -Dm644 %{SOURCE3} -t %{buildroot}%{_licensedir}/%{full_name}

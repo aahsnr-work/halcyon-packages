@@ -18,7 +18,7 @@ BuildRequires:  alsa-lib-devel
 BuildRequires:  fftw-devel
 BuildRequires:  pipewire-devel
 BuildRequires:  pulseaudio-libs-devel
-BuildRequires:  jack-audio-connection-devel
+BuildRequires:  jack-audio-connection-kit-devel
 BuildRequires:  iniparser-devel
 
 %description
@@ -38,6 +38,8 @@ output directly.
 
 %files
 %license LICENSE
-%doc README.md CHANGELOG.md
+%doc README.md
+# cava 1.0.0's tarball ships no changelog/man page; make install puts the
+# console font into /usr/share/consolefonts (cava_font__DATA)
 %{_bindir}/cava
-%{_mandir}/man1/cava.1*
+%{_datadir}/consolefonts/cava.psf

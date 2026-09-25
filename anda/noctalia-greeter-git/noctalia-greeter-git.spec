@@ -1,9 +1,9 @@
-%global commit          c803861925bfe759968472c2fbab0aa870eb3b2e
+%global commit          ec03f710b0a93adcc64cfe0d434462ccb30639c6
 %global shortcommit     %(c=%{commit}; echo ${c:0:7})
 %global upstreamname    noctalia-greeter
 
 Name:   	noctalia-greeter-git
-Version:	1.5.0^8.%{shortcommit}
+Version:	1.5.0^11.%{shortcommit}
 Release:	1%{?dist}
 Summary:	A minimal login greeter for greetd that matches the look and feel of Noctalia Shell.
 
@@ -73,6 +73,7 @@ done
 %{_bindir}/%{upstreamname}-compositor
 %{_bindir}/%{upstreamname}-print-greetd-config
 %{_bindir}/%{upstreamname}-session
+%{_bindir}/%{upstreamname}-xsession
 %{_datadir}/%{upstreamname}/*
 %{_datadir}/polkit-1/actions/org.noctalia.greeter.apply-appearance.policy
 

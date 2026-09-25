@@ -66,8 +66,17 @@ def collection_to_group(collection: str) -> str | None:
     return f"texlive-{group}"
 
 
+def snapshot_url(snapshot: str, archive_root: str) -> str:
+    """tlnet-archive URL root for a snapshot date (YYYYMMDD).
+
+    The archive is laid out as YYYY/MM/DD (20260901 -> 2026/09/01)."""
+    if len(snapshot) != 8 or not snapshot.isdigit():
+        sys.exit(f"FATAL: --snapshot must be YYYYMMDD, got {snapshot!r}")
+    return f"{archive_root}/{snapshot[:4]}/{snapshot[4:6]}/{snapshot[6:]}"
+
+
 def fetch_installer(snapshot: str, archive_root: str, workdir: Path) -> Path:
-    url = f"{archive_root}/{snapshot}/tlnet/install-tl-unx.tar.gz"
+    url = f"{snapshot_url(snapshot, archive_root)}/tlnet/install-tl-unx.tar.gz"
     tarball = workdir / "install-tl-unx.tar.gz"
     subprocess.run(
         [
@@ -91,11 +100,17 @@ def fetch_installer(snapshot: str, archive_root: str, workdir: Path) -> Path:
 
 
 def install_snapshot(
-    installer: Path, snapshot: str, archive_root: str, staging: Path
+    installer: Path, snapshot: str, archive_root: str, staging: Path, scheme: str
 ) -> None:
-    profile = workdir_profile(snapshot, archive_root, staging)
+    profile = workdir_profile(snapshot, archive_root, staging, scheme)
     subprocess.run(
-        [str(installer), "--profile", str(profile)],
+        [
+            str(installer),
+            "--profile",
+            str(profile),
+            "--repository",
+            f"{snapshot_url(snapshot, archive_root)}/tlnet",
+        ],
         check=True,
         env={
             "PATH": "/usr/bin:/bin",
@@ -105,19 +120,22 @@ def install_snapshot(
     )
 
 
-def workdir_profile(snapshot: str, archive_root: str, staging: Path) -> Path:
+def workdir_profile(
+    snapshot: str, archive_root: str, staging: Path, scheme: str
+) -> Path:
     p = staging / "texlive.profile"
+    # repository is passed on the CLI (--repository) — modern install-tl
+    # profiles reject a `repository` key
     p.write_text(
         "\n".join(
             [
-                "selected_scheme scheme-medium",
+                f"selected_scheme {scheme}",
                 f"TEXDIR {staging}",
                 f"TEXMFCONFIG {staging}/texmf-config",
                 f"TEXMFVAR {staging}/texmf-var",
                 f"TEXMFLOCAL {staging}/texmf-local",
                 f"TEXMFSYSCONFIG {staging}/texmf-config",
                 f"TEXMFSYSVAR {staging}/texmf-var",
-                f"repository {archive_root}/{snapshot}/tlnet",
                 "option_doc 1",
                 "option_src 0",
                 "instopt_adjustpath 0",
@@ -150,23 +168,33 @@ def parse_tlpdb(tlpdb_path: Path) -> dict[str, dict]:
             current = None
             continue
         if raw.startswith(" "):  # continuation line
-            if current is None or not current.get("runfiles_cont"):
+            if current is None:
                 continue
-            current["runfiles"].append(raw.strip())
+            entry = raw.strip()
+            # annotation suffix: details="Package documentation"
+            if " details=" in entry:
+                entry = entry.split(" details=", 1)[0].strip()
+            if current.get("runfiles_cont"):
+                current["runfiles"].append(entry)
+            elif current.get("docfiles_cont"):
+                current["docfiles"].append(entry)
             continue
         if current is not None:
             current["runfiles_cont"] = False
+            current["docfiles_cont"] = False
         if raw.startswith("name "):
             name = raw.removeprefix("name ").strip()
             current = packages.setdefault(
-                name, {"runfiles": [], "depend": [], "execute": []}
+                name,
+                {"runfiles": [], "docfiles": [], "depend": [], "execute": []},
             )
-            current["runfiles_cont"] = False
             continue
         if current is None:
             continue
         if raw.startswith("runfiles"):
             current["runfiles_cont"] = True
+        elif raw.startswith("docfiles"):
+            current["docfiles_cont"] = True
         elif raw.startswith(("shortdesc ",)):
             current["shortdesc"] = raw.removeprefix("shortdesc ").strip()
         elif raw.startswith("depend "):
@@ -176,28 +204,167 @@ def parse_tlpdb(tlpdb_path: Path) -> dict[str, dict]:
     return packages
 
 
-def generate_spec(snapshot: str, staging: Path, outdir: Path) -> Path:
+def resolve_scheme_collections(tlpdb: dict[str, dict], scheme: str) -> set[str]:
+    """All collection-* packages a scheme pulls in, transitively."""
+    if scheme not in tlpdb:
+        sys.exit(f"FATAL: scheme {scheme!r} not found in the tlpdb")
+    collections: set[str] = set()
+    stack = [_dep_name(d) for d in tlpdb[scheme]["depend"]]
+    while stack:
+        dep = stack.pop()
+        if dep.startswith("collection-") and dep not in collections:
+            collections.add(dep)
+            stack.extend(
+                _dep_name(d) for d in tlpdb.get(dep, {"depend": []})["depend"]
+            )
+    return collections
+
+
+def _dep_name(dep: str, platform: str = "x86_64-linux") -> str:
+    """Resolve a tlpdb depend token to the package name for our platform.
+
+    Plain deps may be platform-qualified (synctex.x86_64-linux) or carry the
+    ARCH placeholder install-tl substitutes (biber.ARCH)."""
+    name = dep.split(":", 1)[0]
+    if name.endswith(".ARCH"):
+        name = name[: -len(".ARCH")] + "." + platform
+    return name
+
+
+def _scheme_collection_order(
+    scheme_data: dict, packages: dict[str, dict], installed: set[str]
+) -> list[str]:
+    """The scheme's collections in depend order (scheme deps first, then any
+    transitive ones)."""
+    order: list[str] = []
+    stack = [_dep_name(d) for d in scheme_data["depend"]]
+    while stack:
+        dep = stack.pop()
+        if dep in order or dep not in installed:
+            continue
+        if dep.startswith("collection-"):
+            order.append(dep)
+        stack.extend(
+            _dep_name(d) for d in packages.get(dep, {"depend": []})["depend"]
+        )
+    return order
+
+
+
+def _claim(groups, target, rf, files_seen):
+    if rf in files_seen:
+        return
+    files_seen.add(rf)
+    groups[target]["runfiles"].append(rf)
+
+def generate_spec(
+    snapshot: str, staging: Path, outdir: Path, scheme: str = "scheme-medium",
+    docs: bool = True,
+) -> Path:
     tlpdb = staging / "tlpkg" / "texlive.tlpdb"
     packages = parse_tlpdb(tlpdb)
-    groups: dict[str, dict] = {"texlive-doc": {"runfiles": [], "depend": [], "execute": []}}
-    for pkgname, data in packages.items():
-        if not pkgname.startswith("collection-"):
-            continue
+    installed = resolve_scheme_collections(packages, scheme)
+    # process collections in the scheme's depend order so shared member
+    # packages are owned deterministically by the first claiming collection
+    scheme_data = packages[scheme]
+    ordered = [
+        c
+        for c in _scheme_collection_order(scheme_data, packages, installed)
+        if c in installed
+    ]
+
+    groups: dict[str, dict] = {}
+    if docs:
+        groups["texlive-doc"] = {"runfiles": [], "depend": [], "execute": []}
+    claimed: set[str] = set()
+    # a shared file (fonts READMEs, doc/info) may be reached through several
+    # member packages — rpm rejects duplicate %files entries, so the first
+    # attribution wins everywhere
+    files_seen: set[str] = set()
+    for pkgname in ordered:
+        data = packages[pkgname]
         group = collection_to_group(pkgname)
         if group is None:
             continue
         groups.setdefault(group, {"runfiles": [], "depend": [], "execute": []})
         for dep in data["depend"]:
+            dep = _dep_name(dep)
             if dep.startswith("collection-"):
                 dep_group = collection_to_group(dep)
                 if dep_group and dep_group != group:
                     groups[group]["depend"].append(dep_group)
-        for rf in data["runfiles"]:
+        # transitive member closure: collections pull packages whose own
+        # depend lists pull more packages — every reached package's files
+        # belong to this collection's group (first claiming collection wins)
+        stack = [_dep_name(d) for d in data["depend"]]
+        seen: set[str] = set()
+        while stack:
+            dep = stack.pop()
+            if dep in seen or dep.startswith("collection-"):
+                continue
+            member = packages.get(dep)
+            if member is None:
+                continue
+            seen.add(dep)
+            stack.extend(_dep_name(d) for d in member["depend"])
+            # docfiles are the package's documentation — always texlive-doc
+            # (skipped entirely in --no-docs builds)
+            for rf in member["docfiles"]:
+                if not docs:
+                    continue
+                if rf.startswith("RELOC/"):
+                    rf = "texmf-dist/" + rf[len("RELOC/"):]
+                if rf.startswith("texmf-dist/"):
+                    _claim(groups, "texlive-doc", rf, files_seen)
+            for rf in member["runfiles"]:
+                # RELOC/ marks files whose real root is the texmf tree
+                if rf.startswith("RELOC/"):
+                    rf = "texmf-dist/" + rf[len("RELOC/"):]
+                # this set is noarch (BuildArch: noarch); the bin/ tree
+                # (texlive-bin sources) is a follow-up split of its own
+                if not rf.startswith("texmf-dist/"):
+                    continue
+                if rf.startswith("texmf-dist/doc/"):
+                    if not docs:
+                        continue
+                    _claim(groups, "texlive-doc", rf, files_seen)
+                else:
+                    _claim(groups, group, rf, files_seen)
+            groups[group]["execute"].extend(member["execute"])
+        claimed.update(seen)
+
+    # scheme-level plain deps no collection claims (e.g. scheme-small's
+    # babel-* set): their files go to texlive-basic, the root group
+    for dep in scheme_data["depend"]:
+        dep = _dep_name(dep)
+        if dep.startswith("collection-") or dep in claimed or dep not in packages:
+            continue
+        claimed.add(dep)
+        member = packages[dep]
+        groups.setdefault("texlive-basic", {"runfiles": [], "depend": [], "execute": []})
+        for rf in member["docfiles"]:
+            if not docs:
+                continue
+            if rf.startswith("RELOC/"):
+                rf = "texmf-dist/" + rf[len("RELOC/"):]
+            if rf.startswith("texmf-dist/"):
+                _claim(groups, "texlive-doc", rf, files_seen)
+        for rf in member["runfiles"]:
+            if rf.startswith("RELOC/"):
+                rf = "texmf-dist/" + rf[len("RELOC/"):]
+            if not rf.startswith("texmf-dist/"):
+                continue
             if rf.startswith("texmf-dist/doc/"):
-                groups["texlive-doc"]["runfiles"].append(rf)
+                if not docs:
+                    continue
+                _claim(groups, "texlive-doc", rf, files_seen)
             else:
-                groups[group]["runfiles"].append(rf)
-        groups[group]["execute"].extend(data["execute"])
+                _claim(groups, "texlive-basic", rf, files_seen)
+        groups["texlive-basic"]["execute"].extend(member["execute"])
+        claimed.add(dep)
+
+    # install-tl regenerates this manifest at the texmf root
+    groups["texlive-basic"]["runfiles"].append("texmf-dist/ls-R")
 
     subpackages = sorted(groups)
     lines = [
@@ -246,13 +413,9 @@ def generate_spec(snapshot: str, staging: Path, outdir: Path) -> Path:
         # the generated install tree has been checked.
         for rf in files:
             lines.append(f"%{{_tl_texmf}}/{rf.removeprefix('texmf-dist/')}")
-        for frag in groups[group]["execute"]:
-            if "AddFormat" in frag or "addMap" in frag or "AddHyphen" in frag:
-                lines.append("%dir %{_tl_staging}/tlpkg/halcyon-fragments")
-                lines.append(
-                    "%{_tl_staging}/tlpkg/halcyon-fragments/" + group + ".fragments"
-                )
-                break
+        # NOTE: the AddFormat/addMap/AddHyphen execute fragments are not
+        # packaged yet — wiring them up needs the fedora texlive post-install
+        # macros (formats/maps/hyphenation regeneration); follow-up work.
         lines.append("")
 
     outdir.mkdir(parents=True, exist_ok=True)
@@ -264,20 +427,55 @@ def generate_spec(snapshot: str, staging: Path, outdir: Path) -> Path:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--snapshot", required=True, help="tlnet-archive date, YYYYMMDD")
+    ap.add_argument(
+        "--scheme",
+        default="scheme-medium",
+        help="TeX Live scheme to generate (scheme-basic/small/medium/full/...)",
+    )
     ap.add_argument("--archive-root", default="https://texlive.info/tlnet-archive")
     ap.add_argument("--out", default="./generated")
+    ap.add_argument(
+        "--tlpdb-only",
+        action="store_true",
+        help="fetch only the snapshot tlpdb — the %%files lists derive from it "
+        "alone; skip the local staging install (the build chroot stages its "
+        "own tree from the archive URL at build time)",
+    )
+    ap.add_argument(
+        "--no-docs",
+        action="store_true",
+        help="package no docfiles (option_doc 0) — ~70 percent of the bulk",
+    )
     args = ap.parse_args()
 
     workdir = Path(f"/var/tmp/tl-splitter-{args.snapshot}")
     staging = workdir / "staging"
     staging.mkdir(parents=True, exist_ok=True)
 
-    installer = fetch_installer(args.snapshot, args.archive_root, workdir)
-    install_snapshot(installer, args.snapshot, args.archive_root, staging)
-    spec = generate_spec(args.snapshot, staging, Path(args.out))
+    if not args.tlpdb_only:
+        installer = fetch_installer(args.snapshot, args.archive_root, workdir)
+        install_snapshot(installer, args.snapshot, args.archive_root, staging, args.scheme)
+    else:
+        tlpdb_dest = workdir / "texlive.tlpdb"
+        tlpdb_dest.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            [
+                "curl", "-fsSL", "--retry", "5", "--retry-all-errors",
+                f"{snapshot_url(args.snapshot, args.archive_root)}/tlnet/"
+                "tlpkg/texlive.tlpdb",
+                "-o", str(tlpdb_dest),
+            ],
+            check=True,
+        )
+        tlpkg = staging / "tlpkg"
+        tlpkg.mkdir(parents=True, exist_ok=True)
+        import shutil
+
+        shutil.copy(tlpdb_dest, tlpkg / "texlive.tlpdb")
+    spec = generate_spec(args.snapshot, staging, Path(args.out), args.scheme, docs=not args.no_docs)
     print(f"OK: generated {spec}")
-    print("next: build the whole set atomically in mock (one snapshot for all groups),")
-    print("then publish to repo/fedora/44/x86_64 and bump texlive-meta consumers.")
+    print("next: adapt-spec.py writes the buildable anda package spec,")
+    print("then publish to the R2 bucket (one snapshot for all groups).")
 
 
 if __name__ == "__main__":

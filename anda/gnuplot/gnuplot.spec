@@ -42,7 +42,9 @@ rm -f %{buildroot}%{_libdir}/libgnuplot.la
 
 %files
 %{_bindir}/gnuplot
+%{_libexecdir}/gnuplot/
 %{_mandir}/man1/gnuplot.1*
+%lang(ja) %{_mandir}/ja/man1/gnuplot.1*
 %{_datadir}/gnuplot/
 
 %changelog

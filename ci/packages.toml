@@ -125,11 +125,6 @@ batch = 0
 [zotero]
 batch = 0
 
-# zen-browser follows SnenxyTengoku's COPR spec (x86_64 only, no twilight);
-# /opt/zen install + launcher script + patchelf RPATH fix.
-[zen-browser]
-batch = 0
-
 # xwiimote-ng is wired in but has never been through a validated build —
 # its first Copr build is the validation. Watch the first run.
 [xwiimote-ng]
@@ -190,3 +185,21 @@ batch = 0
 # tarball.
 [opencode]
 batch = 0
+
+# ------------------------------------------------------------ hyprland-adjacent
+# nwg-look and qt6ct follow LionHeartP/hyprlandRPM (the Hyprland ecosystem
+# repo, like the hyprwm stack above): nwg-look builds from the Go module
+# proxy at %build time; qt6ct pins a GitLab commit of the canonical repo.
+[nwg-look]
+batch = 0
+
+[qt6ct]
+batch = 0
+
+# texlive-texmf: the Arch-style grouped split — ONE source spec whose
+# subpackages are the collection groups of the scheme, generated from the
+# dated tlnet-archive snapshot by tools/texlive-splitter. Regeneration is a
+# maintainer step (a new snapshot = new %files lists), not a sweep. Own batch:
+# the multi-hour build must not sit in the same wave as the hand packages.
+[texlive-texmf]
+batch = 3

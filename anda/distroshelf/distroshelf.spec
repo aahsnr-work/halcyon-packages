@@ -23,12 +23,15 @@ BuildRequires:  gettext
 BuildRequires:  desktop-file-utils
 BuildRequires:  pkgconfig(gtk4)
 BuildRequires:  pkgconfig(libadwaita-1)
+# vte4-sys needs the GTK4 VTE pkg-config module (vte-2.91-gtk4)
+BuildRequires:  vte291-gtk4-devel
 
 %description
 GUI to manage containers and box instances.
 
 %prep
-%forgeautosetup -p1
+# GitHub's archive dir is DistroShelf-<version> (capital D)
+%autosetup -n DistroShelf-%{version} -p1
 
 %build
 %meson
@@ -45,7 +48,7 @@ install -Dm0755 %{SOURCE1} %{buildroot}%{_bindir}/distroshelf-helper
 %find_lang %{name}
 
 %files -f %{name}.lang
-%license LICENSE
+%license COPYING
 %doc README.md
 %{_bindir}/distroshelf
 %{_bindir}/distroshelf-helper
@@ -53,6 +56,9 @@ install -Dm0755 %{SOURCE1} %{buildroot}%{_bindir}/distroshelf-helper
 %{_datadir}/applications/com.ranfdev.DistroShelf.desktop
 %{_datadir}/metainfo/com.ranfdev.DistroShelf.metainfo.xml
 %{_datadir}/glib-2.0/schemas/com.ranfdev.DistroShelf.gschema.xml
+%{_datadir}/dbus-1/services/com.ranfdev.DistroShelf.service
+%{_datadir}/icons/hicolor/scalable/apps/com.ranfdev.DistroShelf.svg
+%{_datadir}/icons/hicolor/symbolic/apps/com.ranfdev.DistroShelf-symbolic.svg
 
 %changelog
 * Wed Sep 23 2026 halcyon-autobump <aahsnr041@proton.me>

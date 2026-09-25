@@ -1,6 +1,9 @@
-# halcyon-packages' own published repository (GitHub Pages; deployed by
-# ci/publish.sh from the anda-build.yml waves). Maintained by hand — there is
-# no external service generating it any more.
+# halcyon-packages' own published repositories. The hand-maintained packages
+# publish to GitHub Pages (deployed by ci/publish.sh from the anda-build.yml
+# waves); the texlive-texmf set — too large for the ~1 GB Pages budget —
+# publishes to a Cloudflare R2 bucket (ci/publish-r2.sh). Both are signed
+# with the same GPG key (the key file is canonical on Pages). Maintained by
+# hand — there is no external service generating them any more.
 #
 #   sudo curl -fsSL https://aahsnr-work.github.io/halcyon-packages/repo/f44/halcyon-packages.repo \
 #       -o /etc/yum.repos.d/halcyon-packages.repo
@@ -12,6 +15,21 @@ skip_if_unavailable=True
 # prefer this repo over Fedora/Terra whenever the same package name exists in
 # both (halcyon requirement: listed packages always install from here) — dnf
 # repo priority wins even if the other repo carries a newer version
+priority=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://aahsnr-work.github.io/halcyon-packages/repo/RPM-GPG-KEY-halcyon-packages
+enabled=1
+enabled_metadata=1
+
+# the texlive-texmf subpackage set (Arch-style collection groups) — a
+# multi-GB payload served from the R2 bucket; separate repo so the Pages
+# size budget stays untouched
+[halcyon-texlive]
+name=halcyon-packages texlive for Fedora 44 ($basearch)
+baseurl=https://r2.halcyon-packages.example.com/texlive/f44/x86_64/
+type=rpm-md
+skip_if_unavailable=True
 priority=1
 gpgcheck=1
 repo_gpgcheck=1

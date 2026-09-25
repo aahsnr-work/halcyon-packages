@@ -12,9 +12,10 @@ BuildArch:      x86_64
 %description
 %{summary}.
 %prep
-# Copr buildroots have no network by default: copr.d/<pkg>/script.sh already
-# downloaded Source0 into the source directory. Use %setup -q -c -T -a 0 for
-# archives rpmbuild can unpack; for anything else read it from %{_sourcedir}.
+# mock fetches the Source* URLs at SRPM-build time (anda enables network for
+# them); %prep only unpacks/uses what rpmbuild already downloaded. Use
+# %setup -q -c -T -a 0 for archives rpmbuild can unpack; for anything else
+# read it from %{_sourcedir}.
 %setup -q -c -T
 cp %{_sourcedir}/<artifact-file> artifact   # + vendor digest check when published
 %install

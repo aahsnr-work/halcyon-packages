@@ -108,7 +108,7 @@ higher batch. Dispatch it manually the first time and review the produced PR
 | rebuild one package | Actions → anda-build → Run workflow, `only = <pkg>` (its higher batches rebuild too) |
 | upstream version bumps | automatic — `anda-update.yml` opens one PR/day; review & merge |
 | manual sweep check | `anda update` locally (needs `GITHUB_TOKEN=$(gh auth token)` to avoid API rate limits) |
-| local package build | `podman run --rm -it --privileged -v "$PWD":/h -w /h ghcr.io/<owner>/halcyon-builder:f44 anda build anda/<pkg> -c halcyon-f44-x86_64` |
+| local package build | `podman run --rm -it --privileged -v "$PWD":/h -w /h ghcr.io/<owner>/halcyon-builder:f44 anda build <pkg> -c halcyon-f44-x86_64` |
 | watch status | the Actions run page — wave jobs name their package in the title |
 | publish manually | `GPG_KEY_ID=<fpr> ci/publish.sh rpms srpms` from a run's artifacts |
 
