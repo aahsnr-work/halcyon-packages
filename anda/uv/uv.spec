@@ -25,12 +25,19 @@ a drop-in replacement for pip/pip-tools/virtualenv/pipx and more.
 %install
 install -Dpm755 uv %{buildroot}%{_bindir}/uv
 install -Dpm755 uvx %{buildroot}%{_bindir}/uvx
-./uv generate-shell-completions --shell bash > uv.bash
-./uv generate-shell-completions --shell zsh > _uv
-./uv generate-shell-completions --shell fish > uv.fish
-install -Dpm644 uv.bash %{buildroot}%{_datadir}/bash-completion/completions/uv
-install -Dpm644 _uv %{buildroot}%{_datadir}/zsh/site-functions/_uv
-install -Dpm644 uv.fish %{buildroot}%{_datadir}/fish/vendor_completions.d/uv.fish
+# completions come from the clap_complete flag on each binary — the
+# generate-shell-completions subcommand was removed upstream after 0.12.17
+for cmd in uv uvx; do
+    ./$cmd --generate-shell-completion bash > $cmd.bash
+    ./$cmd --generate-shell-completion zsh  > _$cmd
+    ./$cmd --generate-shell-completion fish > $cmd.fish
+done
+install -Dpm644 uv.bash  %{buildroot}%{_datadir}/bash-completion/completions/uv
+install -Dpm644 _uv      %{buildroot}%{_datadir}/zsh/site-functions/_uv
+install -Dpm644 uv.fish  %{buildroot}%{_datadir}/fish/vendor_completions.d/uv.fish
+install -Dpm644 uvx.bash %{buildroot}%{_datadir}/bash-completion/completions/uvx
+install -Dpm644 _uvx     %{buildroot}%{_datadir}/zsh/site-functions/_uvx
+install -Dpm644 uvx.fish %{buildroot}%{_datadir}/fish/vendor_completions.d/uvx.fish
 
 %files
 %{_bindir}/uv
@@ -38,6 +45,9 @@ install -Dpm644 uv.fish %{buildroot}%{_datadir}/fish/vendor_completions.d/uv.fis
 %{_datadir}/bash-completion/completions/uv
 %{_datadir}/zsh/site-functions/_uv
 %{_datadir}/fish/vendor_completions.d/uv.fish
+%{_datadir}/bash-completion/completions/uvx
+%{_datadir}/zsh/site-functions/_uvx
+%{_datadir}/fish/vendor_completions.d/uvx.fish
 
 %changelog
 * Fri Sep 25 2026 halcyon-autobump <aahsnr041@proton.me>
