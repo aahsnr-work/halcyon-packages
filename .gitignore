@@ -11,3 +11,7 @@ TaskNotes/
 __pycache__/
 # texlive-pkg tlpdb fetch cache
 .cache/
+
+# osc build scratch (tools/obs-local.sh)
+_buildconfig-*
+_buildinfo-*.xml

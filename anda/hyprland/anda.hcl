@@ -1,6 +1,6 @@
 project pkg {
 	arches = ["x86_64"]
 	rpm {
-		spec = "hyprland-git.spec"
+		spec = "hyprland.spec"
 	}
 }
