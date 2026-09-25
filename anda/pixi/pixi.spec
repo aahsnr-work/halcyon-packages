@@ -1,33 +1,23 @@
-# Source build following Terra's pixi.spec: the online cargo prep vendors the
-# dependency tree over the network at build time (anda-srpm-macros +
-# cargo-rpm-macros, both in Fedora 44, provide the needed macros). The binary
-# crate is NOT published to crates.io — the crates.io "pixi" name is an
-# unrelated project — so the source is the release tag tarball.
-# Was: prebuilt-binary wrapper over the official musl release.
-# the vendored crate sources carry Rust inner attributes that the shebang
-# mangler misreads, and nothing here is a script to mangle
-%undefine __brp_mangle_shebangs
+# Wrapper over pixi's official prebuilt musl release binary (single static
+# executable). Terra builds pixi from source (%cargo_prep_online), which
+# needs network access during the RPM build; here the official binary is
+# repackaged instead — same upstream release, seconds instead of the ~1-2h
+# source build (the 2026-09-25 CI attempt also hung in the sccache/rustc
+# layer mid-tree). The binary generates its own shell completions at build
+# time.
 %define debug_package %{nil}
-# no debuginfo in the compiled objects either — nothing consumes it and it
-# is a large share of compile time on big dependency trees
-%define rustflags_debuginfo 0
-
 Name:           pixi
 Version:        0.81.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A cross-platform, multi-language package manager and workflow tool
-# pixi itself is BSD-3-Clause; the aggregate expression is Terra's for the
-# same upstream version — the full per-crate dump ships as LICENSE.dependencies
-License:        BSD-3-Clause AND bzip2-1.0.6 AND MPL-2.0 AND Unicode-3.0 AND (Zlib OR Apache-2.0 OR MIT) AND Zlib AND (Unlicense OR MIT) AND (MIT OR Zlib OR Apache-2.0) AND (MIT OR LGPL-3.0-or-later) AND (MIT OR Apache-2.0 OR Zlib) AND (MIT OR Apache-2.0 OR LGPL-2.1-or-later) AND (MIT OR Apache-2.0 OR BSD-1-Clause) AND CDLA-Permissive-2.0 AND (LGPL-3.0-or-later OR MPL-2.0) AND (ISC AND (Apache-2.0 OR ISC) AND OpenSSL) AND (ISC AND (Apache-2.0 OR ISC)) AND ISC AND (CC0-1.0 OR MIT-0 OR Apache-2.0) AND (CC0-1.0 OR MIT-0) AND BSL-1.0 AND (Apache-2.0 OR MIT) AND BSD-2-Clause AND (MIT OR Apache-2.0) AND Unicode-3.0 AND 0BSD AND (0BSD OR MIT OR Apache-2.0) AND Apache-2.0 AND MIT AND (Apache-2.0 OR BSD-2-Clause) AND (Apache-2.0 OR BSL-1.0) AND (Apache-2.0 OR GPL-2.0-only) AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR MIT OR Zlib) AND (Apache-2.0 WITH LLVM-exception) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (BSD-2-Clause OR Apache-2.0 OR MIT)
+# pixi itself is BSD-3-Clause; the static binary also embeds Rust dependency
+# code under its own licenses (see terra's pixi.spec for the full SPDX dump)
+License:        BSD-3-Clause
 URL:            https://pixi.sh
-Source0:        https://github.com/prefix-dev/pixi/archive/refs/tags/v%{version}.tar.gz
+#!RemoteAsset
+Source0:        https://github.com/prefix-dev/pixi/releases/download/v%{version}/pixi-x86_64-unknown-linux-musl.tar.gz
 
-BuildRequires:  anda-srpm-macros
-BuildRequires:  cargo-rpm-macros >= 24
-BuildRequires:  mold
-# compilation cache server — its cache dir lives on the workspace via the
-# mock config's bind mount, shared across all rust source builds
-BuildRequires:  sccache
+ExclusiveArch:  x86_64
 
 %description
 pixi is a cross-platform, multi-language package manager and workflow tool
@@ -36,38 +26,24 @@ exceptional experience similar to popular package managers like cargo or npm,
 but for any language.
 
 %prep
-%autosetup
-%cargo_prep_online_sccache
-
-%build
-# cache dir on the workspace bind mount (see mock config) — survives across
-# builds and is shared by every rust source build
-export SCCACHE_DIR=/sccache
-%cargo_build
-for shell in bash zsh fish; do
-    target/rpm/pixi completion --shell $shell > completions.$shell
-done
+%setup -q -c -T -a 0
 
 %install
-export SCCACHE_DIR=/sccache
-install -Dpm755 target/rpm/pixi %{buildroot}%{_bindir}/pixi
-install -Dpm644 completions.bash \
-    %{buildroot}%{_datadir}/bash-completion/completions/pixi
-install -Dpm644 completions.zsh \
-    %{buildroot}%{_datadir}/zsh/site-functions/_pixi
-install -Dpm644 completions.fish \
-    %{buildroot}%{_datadir}/fish/vendor_completions.d/pixi.fish
-%{cargo_license_online} > LICENSE.dependencies
+install -Dpm755 pixi %{buildroot}%{_bindir}/pixi
+./pixi completion --shell bash > pixi.bash
+./pixi completion --shell zsh > _pixi
+./pixi completion --shell fish > pixi.fish
+install -Dpm644 pixi.bash %{buildroot}%{_datadir}/bash-completion/completions/pixi
+install -Dpm644 _pixi %{buildroot}%{_datadir}/zsh/site-functions/_pixi
+install -Dpm644 pixi.fish %{buildroot}%{_datadir}/fish/vendor_completions.d/pixi.fish
 
 %files
-%license LICENSE LICENSE.dependencies
-%doc README.md CHANGELOG.md
 %{_bindir}/pixi
 %{_datadir}/bash-completion/completions/pixi
 %{_datadir}/zsh/site-functions/_pixi
 %{_datadir}/fish/vendor_completions.d/pixi.fish
 
 %changelog
-* Thu Sep 24 2026 ahsan <aahsnr041@proton.me> - 0.81.0-1
-- source build with the terra cargo macro set, matching Terra's pixi.spec
-  (was: prebuilt-binary wrapper over the musl release)
+* Fri Sep 25 2026 ahsan <aahsnr041@proton.me> - 0.81.0-2
+- back to the official musl binary wrapper: the CI source build hung in the
+  sccache/rustc layer and even healthy costs 1-2h on CI runners

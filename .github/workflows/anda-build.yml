@@ -340,17 +340,21 @@ jobs:
     with:
       batch: 3
 
-  # the texlive-texmf wave: ONE atomic spec (all collection groups, one
-  # snapshot), own batch so the multi-hour build never gates the hand
-  # packages. Published to the R2 bucket — beyond the Pages budget.
+  # the R2 wave: texlive-texmf (ONE atomic spec, multi-hour build) and the
+  # onlyoffice rewrap (363 MB payload) — too big for the Pages budget, so
+  # this wave publishes to the R2 bucket instead.
   build4:
-    name: "batch 4 — texlive-texmf"
+    name: "batch 4 — R2 (texlive + onlyoffice)"
     needs: [manifest, publish3]
     if: >
       always() &&
       needs.manifest.result == 'success' &&
       (needs.publish3.result == 'success' || needs.publish3.result == 'skipped') &&
       needs.manifest.outputs.batch4 != ''
+    strategy:
+      matrix:
+        pkg: ${{ fromJson(needs.manifest.outputs.batch4) }}
+      fail-fast: false
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
@@ -360,11 +364,11 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@v7
       - name: anda build
-        run: anda build -c "$MOCK_CONFIG" anda/texlive-texmf
+        run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
       - name: Upload RPMs
         uses: actions/upload-artifact@v7
         with:
-          name: "4-x86_64-texlive-texmf"
+          name: "4-${{ matrix.pkg.arch }}-${{ matrix.pkg.name }}"
           path: |
             anda-build/rpm/rpms/*
             anda-build/rpm/srpm/*

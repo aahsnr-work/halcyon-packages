@@ -135,9 +135,9 @@ batch = 0
 [cava]
 batch = 0
 
-# pixi: official musl binary + completions generated at build time. (Terra
-# builds it from source with %cargo_prep_online; the project now has
-# --enable-net on, so switching to the cargo build is a follow-up option.)
+# pixi: official musl binary + completions generated at build time. (A
+# source-build attempt was reverted — it hung in CI and costs 1-2h on
+# runners; Terra builds it from source with %cargo_prep_online.)
 [pixi]
 batch = 0
 
@@ -209,6 +209,16 @@ batch = 0
 [opencode]
 batch = 0
 
+# marksman: Markdown LSP server, wrapper over the upstream self-contained
+# .NET release binary (no crates.io publish, not in Fedora).
+[marksman]
+batch = 0
+
+# texlab: LaTeX LSP server, Rust source build from the release tag tarball
+# (the crates.io texlab is stale upstream; yazi pattern).
+[texlab]
+batch = 0
+
 # ------------------------------------------------------------ hyprland-adjacent
 # nwg-look and qt6ct follow LionHeartP/hyprlandRPM (the Hyprland ecosystem
 # repo, like the hyprwm stack above): nwg-look builds from the Go module
@@ -219,10 +229,15 @@ batch = 0
 [qt6ct]
 batch = 0
 
-# texlive-texmf: the Arch-style grouped split — ONE source spec whose
-# subpackages are the collection groups of the scheme, generated from the
-# dated tlnet-archive snapshot by tools/texlive-splitter. Regeneration is a
-# maintainer step (a new snapshot = new %files lists), not a sweep. Own batch:
-# the multi-hour build must not sit in the same wave as the hand packages.
+# texlive-texmf + onlyoffice-desktopeditors: the R2 wave. texlive is the
+# Arch-style grouped split — ONE source spec whose subpackages are the
+# collection groups of the scheme, generated from the dated tlnet-archive
+# snapshot by tools/texlive-splitter. Regeneration is a maintainer step (a
+# new snapshot = new %files lists), not a sweep. onlyoffice is a 363 MB
+# vendor-RPM rewrap that would take a third of the Pages budget, so it
+# shares this wave's R2 publish.
 [texlive-texmf]
+batch = 4
+
+[onlyoffice-desktopeditors]
 batch = 4
