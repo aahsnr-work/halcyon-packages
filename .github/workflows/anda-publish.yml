@@ -47,12 +47,12 @@ jobs:
       - name: Import the RPM signing key
         if: github.event_name != 'pull_request'
         id: gpg
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Download the wave's RPMs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: "${{ inputs.batch }}-*"
           merge-multiple: true
