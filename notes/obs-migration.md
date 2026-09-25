@@ -22,8 +22,9 @@ Status: **GitHub side done; OBS side pending one token.**
   BuildRequire resolution until those four are packaged in the project:
   hyprshutdown (glaze-devel, hyprtoolkit), hyprland-guiutils +
   hyprpwcenter (hyprtoolkit), hyprland-git (hyprwire),
-  noctalia-greeter-git + nwg-look (wlroots). Everything else builds
-  against Fedora alone.
+  noctalia-greeter-git (wlroots). Everything else builds against Fedora
+  alone (nwg-look merely mentions wlroots in its description — audit
+  corrected).
 - ⏳ After first builds go green: flip `repo/halcyon-packages.repo` to
   `https://download.opensuse.org/repositories/home:/halcyon041/Fedora_44/`
   (the trailing colon is OBS's URL mangling of `home:`) with the project
