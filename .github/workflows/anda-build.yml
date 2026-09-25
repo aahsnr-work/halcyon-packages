@@ -53,10 +53,12 @@ jobs:
       - name: Shell syntax (publish tooling + any package helper scripts)
         run: |
           set -eu
-          sh -n ci/publish.sh
+          # bash -n, not sh -n: every script here is bash (arrays, process
+          # substitution), and /bin/sh is dash on the runners
+          bash -n ci/publish.sh
           for f in anda/*/*.sh; do
             [ -e "$f" ] || continue
-            sh -n "$f"
+            bash -n "$f"
           done
       - name: Python syntax
         run: python3 -m py_compile ci/*.py
