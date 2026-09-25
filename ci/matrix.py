@@ -163,13 +163,16 @@ def select_since(pkgs: dict[str, dict], rev: str) -> set[str]:
 
 def entries(names: set[str], pkgs: dict[str, dict], labels: dict[str, str]):
     for name in sorted(names):
-        # hand-maintained packages live at anda/<name>/, the generated
-        # texlive set at anda/texlive/<name>/ (anda's project keys follow
+        # hand-maintained packages live at anda/<name>/, the generated texlive
+        # set at anda/texlive/<name>/ (anda's project keys follow
         # the directories; strip_prefix/strip_suffix give the alias)
         pkg_path = f"anda/{name}" if (REPO_ROOT / "anda" / name / "anda.hcl").is_file() \
             else f"anda/texlive/{name}"
         yield {
             "pkg": f"{pkg_path}/pkg",
+            # "name" is the registry key — the workflow needs it for artifact
+            # names, where the slashes in "pkg" (anda/<name>/pkg) are illegal
+            "name": name,
             "arch": ARCH,
             "labels": {"batch": str(pkgs[name]["batch"]), **labels},
         }

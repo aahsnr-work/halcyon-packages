@@ -161,7 +161,7 @@ jobs:
       - name: Upload RPMs
         uses: actions/upload-artifact@v7
         with:
-          name: "0-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
+          name: "0-${{ matrix.pkg.arch }}-${{ matrix.pkg.name }}"
           path: |
             anda-build/rpm/rpms/*
             anda-build/rpm/srpm/*
@@ -205,7 +205,7 @@ jobs:
       - name: Upload RPMs
         uses: actions/upload-artifact@v7
         with:
-          name: "1-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
+          name: "1-${{ matrix.pkg.arch }}-${{ matrix.pkg.name }}"
           path: |
             anda-build/rpm/rpms/*
             anda-build/rpm/srpm/*
@@ -249,7 +249,7 @@ jobs:
       - name: Upload RPMs
         uses: actions/upload-artifact@v7
         with:
-          name: "2-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
+          name: "2-${{ matrix.pkg.arch }}-${{ matrix.pkg.name }}"
           path: |
             anda-build/rpm/rpms/*
             anda-build/rpm/srpm/*
@@ -293,7 +293,7 @@ jobs:
       - name: Upload RPMs
         uses: actions/upload-artifact@v7
         with:
-          name: "3-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
+          name: "3-${{ matrix.pkg.arch }}-${{ matrix.pkg.name }}"
           path: |
             anda-build/rpm/rpms/*
             anda-build/rpm/srpm/*
