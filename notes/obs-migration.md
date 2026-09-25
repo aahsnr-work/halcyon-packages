@@ -1,8 +1,24 @@
 # OBS migration — decision + recipe
 
-Status: **prepared, not executed**. Executing needs an OBS account
-(build.opensuse.org) and an `osc`/API token — none exist in this
-environment yet (`~/.config/osc/` absent).
+Status: **GitHub side done; OBS side pending one token.**
+
+- ✅ GitHub repo pushed with the full project (`60a9f72`, main, public) —
+  scmsync builds from it.
+- ✅ Migration script: `tools/obs-migrate.py` — generates the project meta
+  (Fedora 44 target, x86_64, publish enabled, lionheartp/Hyprland Copr
+  attached as a download-on-demand repo) and one scmsync package meta per
+  `ci/packages.toml` entry (`?subdir=anda/<pkg>#main`), excluding
+  texlive-texmf. Dry-runs clean (41 packages).
+- ⏳ OBS side needs an OBS login (build.opensuse.org) + `osc` auth:
+  `pip install osc` (or distro package), `osc` login once, then:
+      OBS_USER=<login> tools/obs-migrate.py --apply
+  Precondition: `osc ls Fedora:44` must list the Fedora 44 target (if the
+  public instance lacks it yet, point the repo path at a DoD Fedora 44
+  baseurl instead — same `<download>` mechanism as the Copr).
+- ⏳ After first builds go green: flip `repo/halcyon-packages.repo` to
+  `https://download.opensuse.org/repositories/home:<login>:halcyon/Fedora_44/`
+  with the project GPG key, then retire the Actions build workflow (keep the
+  sweep — merging its bump PRs to main is what triggers OBS rebuilds).
 
 ## Decision: GitHub, not GitLab
 
