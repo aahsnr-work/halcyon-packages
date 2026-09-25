@@ -10,16 +10,25 @@ Status: **GitHub side done; OBS side pending one token.**
   download-on-demand repo) and one scmsync package meta per
   `ci/packages.toml` entry (`?subdir=anda/<pkg>#main`), excluding
   texlive-texmf. Dry-runs clean (41 packages).
-- ⏳ OBS side needs an OBS login (build.opensuse.org) + `osc` auth:
-  `pip install osc` (or distro package), `osc` login once, then:
-      OBS_USER=halcyon041 tools/obs-migrate.py --apply
-  Precondition: `osc ls Fedora:44` must list the Fedora 44 target (if the
-  public instance lacks it yet, point the repo path at a DoD Fedora 44
-  baseurl instead — same `<download>` mechanism as the Copr).
+- ✅ **Applied**: `home:halcyon041` project with the Fedora_44 repo
+  (path = Fedora:44 standard, x86_64, publish on) and 41 scmsync packages;
+  the obs-scm-bridge fetched the `anda/<pkg>` subdirs immediately. Runbook
+  that was used: `osc ls Fedora:44` preflight, then
+  `OBS_USER=halcyon041 tools/obs-migrate.py --apply`.
+- ⚠️ **Known gap — hyprwm external deps**: the lionheartp/Hyprland Copr
+  can NOT be attached (download-on-demand is admin-gated on the public
+  instance — HTTP 403 on `<download>` in project meta). Fedora 44 lacks
+  glaze-devel, hyprtoolkit, hyprwire and wlroots, so six packages fail
+  BuildRequire resolution until those four are packaged in the project:
+  hyprshutdown (glaze-devel, hyprtoolkit), hyprland-guiutils +
+  hyprpwcenter (hyprtoolkit), hyprland-git (hyprwire),
+  noctalia-greeter-git + nwg-look (wlroots). Everything else builds
+  against Fedora alone.
 - ⏳ After first builds go green: flip `repo/halcyon-packages.repo` to
-  `https://download.opensuse.org/repositories/halcyon041/Fedora_44/`
-  with the project GPG key, then retire the Actions build workflow (keep the
-  sweep — merging its bump PRs to main is what triggers OBS rebuilds).
+  `https://download.opensuse.org/repositories/home:/halcyon041/Fedora_44/`
+  (the trailing colon is OBS's URL mangling of `home:`) with the project
+  GPG key, then retire the Actions build workflow (keep the sweep —
+  merging its bump PRs to main is what triggers OBS rebuilds).
 
 ## Decision: GitHub, not GitLab
 

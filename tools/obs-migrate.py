@@ -3,9 +3,16 @@
 
 Generates and (with --apply) applies the OBS metadata:
 
-  project: halcyon041 (same name as the OBS user) — Fedora 44 target
-           (x86_64) with the lionheartp/Hyprland Copr attached as a
-           download-on-demand repo
+  project: home:<user> (the user's OBS home project, e.g. home:halcyon041)
+           — Fedora 44 target (x86_64). Top-level project names are not
+           creatable by regular accounts on build.opensuse.org, and
+           download-on-demand external repos (the lionheartp/Hyprland Copr)
+           are admin-gated there (HTTP 403) — so the Copr is NOT attached:
+           the four external hyprwm deps (glaze-devel, hyprtoolkit,
+           hyprwire, wlroots) must instead be packaged in the project
+           itself; until then hyprland-git, hyprland-guiutils,
+           hyprshutdown, hyprpwcenter, noctalia-greeter-git and nwg-look
+           fail to resolve their BuildRequires.
   package: one per ci/packages.toml entry, scmsync pointing at this repo's
            `anda/<pkg>` subdirectory, tracking main
 
@@ -30,10 +37,6 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GITHUB_URL = "https://github.com/aahsnr-work/halcyon-packages"
 BRANCH = "main"
 EXCLUDE = {"texlive-texmf"}  # stays on the R2 flow
-COPR_URL = ("https://download.copr.fedorainfracloud.org/results/"
-            "lionheartp/Hyprland/fedora-44-x86_64/")
-
-
 def packages():
     data = tomllib.load(open(f"{REPO}/ci/packages.toml", "rb"))
     return [name for name in data if name not in EXCLUDE]
@@ -52,10 +55,10 @@ def project_meta(project):
     ET.SubElement(pub, "enable")
     repo = ET.SubElement(prj, "repository", name="Fedora_44")
     ET.SubElement(repo, "path", project="Fedora:44", repository="standard")
-    # hyprwm stack needs what Fedora lacks (glaze-static, hyprtoolkit,
-    # hyprwire, ...) — the same Copr the mock buildroot carries
-    ET.SubElement(repo, "download", arch="x86_64", repotype="rpmmd",
-                  url=COPR_URL)
+    # NOTE: the lionheartp/Hyprland Copr (glaze-devel, hyprtoolkit,
+    # hyprwire, wlroots) can NOT be attached here — download-on-demand
+    # (<download>) is admin-gated on build.opensuse.org (HTTP 403). Those
+    # four deps must become packages in this project instead.
     ET.SubElement(repo, "arch").text = "x86_64"
     return ET.tostring(prj, encoding="unicode")
 
@@ -74,13 +77,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--user", default=os.environ.get("OBS_USER"),
                     help="OBS login (or set OBS_USER)")
-    ap.add_argument("--project", help="default: the OBS user name (halcyon041)")
+    ap.add_argument("--project", help="default: home:<user>")
     ap.add_argument("--apply", action="store_true",
                     help="actually run the osc commands")
     args = ap.parse_args()
     if not args.user:
         sys.exit("set OBS_USER or pass --user")
-    project = args.project or args.user
+    project = args.project or f"home:{args.user}"
 
     pkgs = packages()
     print(f"# {len(pkgs)} packages -> {project} (excluded: {sorted(EXCLUDE)})\n")
@@ -103,8 +106,10 @@ def main():
             rc = os.system(f"osc meta pkg {project} {pkg} -F {f}")
             if rc != 0:
                 sys.exit(f"failed: {pkg}")
+        repo_url = ("https://download.opensuse.org/repositories/"
+                    f"{project.replace(':', ':')}/Fedora_44/")
         print(f"\nDone. Monitor: osc results -l {project}  "
-              f"Repos: https://download.opensuse.org/repositories/{project}/")
+              f"dnf repo: {repo_url} (with the project GPG key)")
     else:
         print("# dry run — pass --apply to execute")
 
