@@ -11,6 +11,7 @@ Release:        5%{?dist}
 Summary:        AI coding agent for the terminal
 License:        MIT
 URL:            https://opencode.ai
+#!RemoteAsset
 Source0:        https://registry.npmjs.org/@opencode%2Fcli-linux-x64/-/cli-linux-x64-%{version}.tgz
 # prebuilt foreign binary: no debug sources to collect
 %define debug_package %{nil}

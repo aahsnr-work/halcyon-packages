@@ -28,6 +28,7 @@ URL:            https://www.zotero.org/
 License:        AGPL-3.0-or-later
 ExclusiveArch:  x86_64
 
+#!RemoteAsset
 Source0:        https://download.zotero.org/client/release/%{version}/Zotero-%{version}_linux-x86_64.tar.xz
 Source1:        %{appid}.metainfo.xml
 

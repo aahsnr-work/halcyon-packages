@@ -60,6 +60,7 @@ License:        GPL-3.0-only
 URL:            https://bitwarden.com
 ExclusiveArch:  x86_64
 
+#!RemoteAsset
 Source0:        https://github.com/bitwarden/clients/releases/download/desktop-v%{version}/Bitwarden-%{version}-x86_64.rpm
 # Upstream prebuilt RPM ships no GPL text (only Electron/Chromium notices
 # under /opt). mock fetches LICENSE_GPL.txt (Source1, pinned to the release
@@ -67,6 +68,7 @@ Source0:        https://github.com/bitwarden/clients/releases/download/desktop-v
 # packaged version. The desktop sources default to GPL-3.0 per the repo's
 # LICENSE.txt ("GPL-3.0 unless the header specifies another license";
 # Bitwarden-licensed files live only in /bitwarden_license).
+#!RemoteAsset
 Source1:        https://raw.githubusercontent.com/bitwarden/clients/desktop-v%{version}/LICENSE_GPL.txt
 # Upstream ships no AppStream metadata at all, so this repo ships a curated
 # file under the RDNS id com.bitwarden.desktop (the id Bitwarden itself

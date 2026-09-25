@@ -20,6 +20,7 @@ License:        MIT OR Apache-2.0
 URL:            https://crates.io/crates/tealdeer
 # the crates.io download URL spelled out: mock fetches sources at
 # SRPM-build time, before the buildroot macros (anda-srpm-macros) exist
+#!RemoteAsset
 Source0:        https://static.crates.io/crates/%{crate}/%{crate}-%{version}.crate
 
 BuildRequires:  anda-srpm-macros

@@ -18,6 +18,7 @@ Release:        1%{?dist}
 Summary:        Official desktop application for Linux
 License:        Proprietary
 URL:            https://ticktick.com/download
+#!RemoteAsset
 Source0:        https://d2atcrkye2ik4e.cloudfront.net/download/linux/linux_deb_x64/ticktick-%{version}-amd64.deb
 Source1:        ticktick.sh
 Source2:        LICENSE

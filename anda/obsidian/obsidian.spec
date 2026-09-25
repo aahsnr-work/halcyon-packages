@@ -23,6 +23,7 @@ Release:            1%{?dist}
 Summary:            A powerful knowledge base that works on top of a local folder of plain text Markdown files
 License:            LicenseRef-Obsidian
 URL:                https://obsidian.md
+#!RemoteAsset
 Source0:            https://github.com/obsidianmd/obsidian-releases/releases/download/v%{version}/obsidian-%{version}.tar.gz
 Source1:            %{full_name}.sh
 Source2:            %{full_name}.desktop

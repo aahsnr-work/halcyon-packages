@@ -16,6 +16,7 @@ Release:        1%{?dist}
 Summary:        Terminal graphics for the 21st century
 License:        LGPL-3.0-or-later AND GPL-3.0-or-later
 URL:            https://hpjansson.org/chafa/
+#!RemoteAsset
 Source0:        https://github.com/hpjansson/chafa/archive/refs/tags/%version.tar.gz
 
 BuildRequires:  gcc

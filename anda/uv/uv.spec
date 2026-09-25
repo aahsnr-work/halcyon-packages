@@ -20,8 +20,11 @@ License:        MIT OR Apache-2.0
 URL:            https://crates.io/crates/uv
 # the crates.io download URL spelled out: mock fetches sources at
 # SRPM-build time, before the buildroot macros (anda-srpm-macros) exist
+#!RemoteAsset
 Source0:        https://static.crates.io/crates/%{crate}/%{crate}-%{version}.crate
+#!RemoteAsset
 Source1:        https://raw.githubusercontent.com/astral-sh/uv/%{version}/LICENSE-APACHE
+#!RemoteAsset
 Source2:        https://raw.githubusercontent.com/astral-sh/uv/%{version}/LICENSE-MIT
 
 BuildRequires:  anda-srpm-macros

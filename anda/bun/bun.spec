@@ -26,6 +26,7 @@ Release:		1%{?dist}
 Summary:		Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
 License:		MIT
 URL:			https://bun.sh
+#!RemoteAsset
 Source0:		https://github.com/oven-sh/bun/releases/download/bun-v%version/bun-linux-%a.zip
 Source1:		sh.oven.bun.metainfo.xml
 BuildRequires:	unzip

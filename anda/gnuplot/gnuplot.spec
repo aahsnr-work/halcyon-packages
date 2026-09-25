@@ -11,6 +11,7 @@ Release:        1%{?dist}
 Summary:        Program for plotting functions and data
 License:        gnuplot
 URL:            http://gnuplot.info
+#!RemoteAsset
 Source0:        https://downloads.sourceforge.net/project/gnuplot/gnuplot/%{version}/gnuplot-%{version}.tar.gz
 
 BuildRequires:  gcc
