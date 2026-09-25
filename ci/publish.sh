@@ -127,6 +127,14 @@ fi
 # --- 5. repodata + the public key --------------------------------------------
 createrepo_c --quiet --update "$PAGES/$PREFIX/x86_64"
 createrepo_c --quiet --update "$PAGES/$PREFIX/source"
+# the repo files declare repo_gpgcheck=1 and dnf5 drops unsigned metadata
+# nondeterministically (observed: in one wave, one chroot installed our
+# hyprutils while another silently fell back to Fedora's stale package).
+# Sign the repodata with the same key as the packages.
+for store in "$PAGES/$PREFIX/x86_64" "$PAGES/$PREFIX/source"; do
+    gpg --batch --yes --detach-sign --armor --local-user "$GPG_KEY_ID" \
+        "$store/repodata/repomd.xml"
+done
 gpg --armor --export "$GPG_KEY_ID" > "$PAGES/$KEYFILE"
 du -sh "$PAGES"
 

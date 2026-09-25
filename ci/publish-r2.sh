@@ -71,6 +71,12 @@ mv -v "$SRPMDIR"/*.src.rpm "$STAGE/$PREFIX/source/" 2>/dev/null || true
 
 createrepo_c --quiet "$STAGE/$PREFIX/x86_64"
 createrepo_c --quiet "$STAGE/$PREFIX/source"
+# repo_gpgcheck=1 in the repo files — dnf5 drops unsigned metadata
+# nondeterministically, so sign it with the same key as the packages
+for store in "$STAGE/$PREFIX/x86_64" "$STAGE/$PREFIX/source"; do
+    gpg --batch --yes --detach-sign --armor --local-user "$GPG_KEY_ID" \
+        "$store/repodata/repomd.xml"
+done
 gpg --armor --export "$GPG_KEY_ID" > "$STAGE/$PREFIX/RPM-GPG-KEY-halcyon-packages"
 du -sh "$STAGE"
 

@@ -40,6 +40,9 @@ Development files for %{name}.
 %autosetup
 
 %build
+# gcc 16 hard-errors the generated protocol code's empty vtable arrays under
+# -Wpedantic (gcc 15 only warned); upstream has no gcc-16 clean release yet
+sed -i 's/-Wpedantic//' CMakeLists.txt
 %cmake -DCMAKE_BUILD_TYPE=Release
 %cmake_build
 

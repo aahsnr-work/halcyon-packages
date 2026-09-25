@@ -47,7 +47,8 @@ Development files for %{name}.
 %{_libdir}/lib%{name}.so.0
 
 %files devel
-# upstream installs only the include/hyprcursor/ directory (no root hpp)
+# 0.1.13 also installs a root-level C++ header alongside include/hyprcursor/
+%{_includedir}/%{name}.hpp
 %{_includedir}/%{name}/
 %{_libdir}/lib%{name}.so
 %{_libdir}/pkgconfig/%{name}.pc
