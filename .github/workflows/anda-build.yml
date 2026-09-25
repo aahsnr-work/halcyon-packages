@@ -22,9 +22,9 @@ name: anda-build
 on:
   push:
     branches: [main]
-    paths: ["anda/**", "ci/**", "mock/**", ".github/builder/**", "anda.hcl", ".github/workflows/anda-build.yml"]
+    paths: ["anda/**", "ci/**", "mock/**", ".github/builder/**", "anda.hcl", ".github/workflows/anda-build.yml", ".github/workflows/anda-publish.yml"]
   pull_request:
-    paths: ["anda/**", "ci/**", "mock/**", ".github/builder/**", "anda.hcl", ".github/workflows/anda-build.yml"]
+    paths: ["anda/**", "ci/**", "mock/**", ".github/builder/**", "anda.hcl", ".github/workflows/anda-build.yml", ".github/workflows/anda-publish.yml"]
   workflow_dispatch:
     inputs:
       only:
