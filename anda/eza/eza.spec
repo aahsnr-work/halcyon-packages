@@ -190,6 +190,16 @@ use the "vendored-openssl" feature of the "%{crate}" crate.
 
 %prep
 %autosetup -n %{crate}-%{version} -p1
+# upstream's Cargo.lock pairs palette 0.7.5 with palette_derive 0.7.7, whose
+# generated code no longer compiles against it (xyz.meta / lms errors) — pin
+# the derive to the matching 0.7.6. cargo_install must NOT get --locked:
+# the pin changes the resolution and --locked would reject it, while -Z
+# avoid-dev-deps would drift past the lock again (CI 2026-09-25).
+cat >> Cargo.toml <<'EOF'
+
+[dependencies.palette_derive]
+version = "=0.7.6"
+EOF
 %cargo_prep_online_sccache
 
 %build
@@ -201,7 +211,7 @@ export SCCACHE_DIR=/sccache
 
 %install
 export SCCACHE_DIR=/sccache
-%cargo_install -- --locked
+%cargo_install
 
 %if %{with check}
 %check

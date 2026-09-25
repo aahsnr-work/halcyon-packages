@@ -27,7 +27,9 @@ Pyprland extends Hyprland with dropped-in Python "plugins": pypr dashboards,
 scratchpads, expose, and more.
 
 %prep
-%forgeautosetup -p1 -n pyprland-%{version}
+# plain %autosetup, not forgeautosetup: no forgemeta state is defined here
+# and forgeautosetup takes no -n option (spec parse died on it in CI)
+%autosetup -p1 -n pyprland-%{version}
 
 %generate_buildrequires
 %pyproject_buildrequires
