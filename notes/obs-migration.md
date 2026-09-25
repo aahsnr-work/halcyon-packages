@@ -6,25 +6,27 @@ Status: **GitHub side done; OBS side pending one token.**
   scmsync builds from it.
 - ✅ Migration script: `tools/obs-migrate.py` — generates the project meta
   for project **`halcyon041`** (same name as the OBS user; Fedora 44 target,
-  x86_64, publish enabled, lionheartp/Hyprland Copr attached as a
-  download-on-demand repo) and one scmsync package meta per
+  x86_64, publish enabled) and one scmsync package meta per
   `ci/packages.toml` entry (`?subdir=anda/<pkg>#main`), excluding
-  texlive-texmf. Dry-runs clean (41 packages).
+  texlive-texmf.
 - ✅ **Applied**: `home:halcyon041` project with the Fedora_44 repo
   (path = Fedora:44 standard, x86_64, publish on) and 41 scmsync packages;
   the obs-scm-bridge fetched the `anda/<pkg>` subdirs immediately. Runbook
   that was used: `osc ls Fedora:44` preflight, then
   `OBS_USER=halcyon041 tools/obs-migrate.py --apply`.
-- ⚠️ **Known gap — hyprwm external deps**: the lionheartp/Hyprland Copr
-  can NOT be attached (download-on-demand is admin-gated on the public
-  instance — HTTP 403 on `<download>` in project meta). Fedora 44 lacks
-  glaze-devel, hyprtoolkit, hyprwire and wlroots, so six packages fail
-  BuildRequire resolution until those four are packaged in the project:
-  hyprshutdown (glaze-devel, hyprtoolkit), hyprland-guiutils +
-  hyprpwcenter (hyprtoolkit), hyprland-git (hyprwire),
-  noctalia-greeter-git (wlroots). Everything else builds against Fedora
-  alone (nwg-look merely mentions wlroots in its description — audit
-  corrected).
+- ✅ **hyprwm external deps — resolved in-repo** (2026-09-25): the
+  lionheartp/Hyprland Copr can NOT be attached (download-on-demand is
+  admin-gated on the public instance — HTTP 403 on `<download>` in project
+  meta). The externals are now packages in this repo instead: glaze 8.4.0
+  (batch 0), hyprwire 0.3.1 (batch 1), hyprtoolkit 0.6.0 (batch 2) — ports
+  of the Copr's LionHeartP/hyprlandRPM specs, pinned to the NVRs the
+  dependents were validated against. The fourth Copr input, wlroots, ships
+  in Fedora 44 itself (0.20.2 + devel) and is used straight from there —
+  an in-repo port was built once, then removed on the user's call.
+  Consumers: hyprland (glaze, hyprwire), hyprshutdown (glaze, hyprtoolkit),
+  hyprland-guiutils + hyprpwcenter (hyprtoolkit), noctalia-greeter-git
+  (wlroots from Fedora). Everything else builds against Fedora alone
+  (nwg-look merely mentions wlroots in its description — audit corrected).
 - ⏳ After first builds go green: flip `repo/halcyon-packages.repo` to
   `https://download.opensuse.org/repositories/home:/halcyon041/Fedora_44/`
   (the trailing colon is OBS's URL mangling of `home:`) with the project

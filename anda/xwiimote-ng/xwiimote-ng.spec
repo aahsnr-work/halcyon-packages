@@ -3,6 +3,7 @@ Summary:       An open-source device driver for Nintendo Wii / Wii U remotes.
 
 Version:       3.0.1
 Release:       1%{?dist}
+%define debug_package %{nil}
 
 License:       MIT
 URL:           https://github.com/dev-0x7C6/xwiimote-ng

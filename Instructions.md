@@ -178,11 +178,11 @@ each other):
   (`bitwarden`, `bun`, `distroshelf`, `nwg-look`, `obsidian`, `opencode`,
   `qt6ct`, `ticktick`, `xwiimote-ng`, `zotero`) and the
   Hyprland/noctalia roots (`hyprland-protocols`, `hyprlang`, `hyprutils`,
-  `hyprwayland-scanner`, `noctalia-git`, `noctalia-greeter-git`, `pyprland`)
+  `hyprwayland-scanner`, `noctalia`, `noctalia-greeter-git`, `pyprland`)
 - **batch 1** — 8 packages: `aquamarine`, `hyprcursor`, `hyprgraphics`,
   `hyprland-guiutils`, `hyprland-qt-support`, `hyprpwcenter`,
   `hyprshutdown`, `xdg-desktop-portal-hyprland` — link against batch 0
-- **batch 2** — 1 package: `hyprland-git` (~15 min) — links against
+- **batch 2** — 1 package: `hyprland` (~15 min) — links against
   batches 0+1
 
 Watch the Actions run: the wave jobs name their package in the job title.
@@ -204,7 +204,7 @@ curl -fsSL https://aahsnr-work.github.io/halcyon-packages/repo/RPM-GPG-KEY-halcy
 
 sudo curl -fsSL https://aahsnr-work.github.io/halcyon-packages/repo/f44/halcyon-packages.repo \
     -o /etc/yum.repos.d/halcyon-packages.repo
-sudo dnf install hyprland-git   # pulls the whole batch 0→1→2 dependency chain
+sudo dnf install hyprland   # pulls the whole batch 0→1→2 dependency chain
 ```
 
 `repo/halcyon-packages.repo` hard-codes the `aahsnr-work` Pages URL; if your
@@ -298,7 +298,7 @@ never-validated builds.
 |  13 | hyprutils                   | 0     | 0.14.2               | source build (hyprwm)                                             |
 |  14 | hyprwayland-scanner         | 0     | 0.4.6                | source build (hyprwm)                                             |
 |  15 | lazygit                     | 0     | 0.65.1               | wrapper                                                           |
-|  16 | noctalia-git                | 0     | 5.1.0^18.git\<sha\>  | source build (main-branch pin)                                    |
+|  16 | noctalia                | 0     | 5.1.0^18.git\<sha\>  | source build (main-branch pin)                                    |
 |  17 | noctalia-greeter-git        | 0     | 1.5.0^8.git\<sha\>   | source build (main-branch pin)                                    |
 |  18 | obsidian                    | 0     | 1.13.7               | wrapper (vendor tarball, Arch layout; digest verified in %prep)   |
 |  19 | opencode                    | 0     | 2.0.14               | wrapper (npm release tarball; scope rewritten by update.rhai)     |
@@ -321,7 +321,7 @@ never-validated builds.
 |  37 | hyprpwcenter                | 1     | 0.1.2                | source build (hyprwm)                                             |
 |  38 | hyprshutdown                | 1     | 0.1.1                | source build (hyprwm)                                             |
 |  39 | xdg-desktop-portal-hyprland | 1     | 1.4.1                | source build (hyprwm)                                             |
-|  40 | hyprland-git                | 2     | 0.56.2^58.git\<sha\> | source build (main-branch pin)                                    |
+|  40 | hyprland                | 2     | 0.56.2^58.git\<sha\> | source build (main-branch pin)                                    |
 
 ### Not packaged here on purpose (runtime gap)
 
@@ -376,7 +376,7 @@ never-validated builds.
                         ▼  ci/publish.sh: rpmsign → createrepo_c →
                            prune superseded → deploy gh-pages
                         │
-   ┌──────────── wave 1 (8 packages) ── wave 2 (hyprland-git) ───────┐
+   ┌──────────── wave 1 (8 packages) ── wave 2 (hyprland) ───────┐
    │   (each wave's buildroot sees the previous wave's output        │
    │    through the Pages repo that publish just refreshed)          │
    └─────────────────────────────────────────────────────────────────┘

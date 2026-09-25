@@ -5,6 +5,7 @@
 Name:           cava
 Version:        1.0.0
 Release:        1%{?dist}
+%define debug_package %{nil}
 Summary:        Console-based audio visualizer for ALSA, PipeWire and PulseAudio
 License:        MIT
 URL:            https://github.com/karlstav/cava

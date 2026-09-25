@@ -5,6 +5,7 @@
 Name:   	noctalia-greeter-git
 Version:	1.5.0^11.%{shortcommit}
 Release:	1%{?dist}
+%define debug_package %{nil}
 Summary:	A minimal login greeter for greetd that matches the look and feel of Noctalia Shell.
 
 License:	MIT

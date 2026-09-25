@@ -71,7 +71,7 @@ Run `.github/workflows/anda-build.yml` (Run workflow, empty `only`):
 validate → manifest (ci/matrix.py splits the build matrix into batch waves)
 build0   (29 packages, in parallel)  → publish0  (sign + createrepo + Pages)
 build1   (8 packages)                → publish1
-build2   (hyprland-git, ~15 min)     → publish2
+build2   (hyprland, ~15 min)     → publish2
 ```
 
 Each wave publishes before the next builds — that publish is what makes the
@@ -87,7 +87,7 @@ curl -fsSL https://aahsnr-work.github.io/halcyon-packages/repo/f44/halcyon-packa
 # the signing key
 curl -fsSL https://aahsnr-work.github.io/halcyon-packages/repo/RPM-GPG-KEY-halcyon-packages | gpg --show-keys
 
-sudo dnf install hyprland-git   # pulls the whole batch 0→1→2 chain
+sudo dnf install hyprland   # pulls the whole batch 0→1→2 chain
 ```
 
 ## Stage 5 — the daily sweep
@@ -128,7 +128,7 @@ higher batch. Dispatch it manually the first time and review the produced PR
   the package directory.
 - `copr/sync.py` + `copr/lib-bump.sh` + `copr.d/*/fetch.sh` → `anda update`
   driving `anda/<pkg>/update.rhai` (the 40 sweepers ported to rhai; the
-  snapshot-counter logic of hyprland-git/noctalia kept, the version-compare
+  snapshot-counter logic of hyprland/noctalia kept, the version-compare
   now via `rpmdev-vercmp` through andax's `sh()`).
 - `copr/watch.py` → the Actions run UI (wave jobs name their package).
 - `copr/project-setup.sh` (Copr project) → gone; `copr/test-source.sh` →

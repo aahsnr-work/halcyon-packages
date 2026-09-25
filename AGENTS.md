@@ -1,6 +1,6 @@
 # AGENTS.md
 
-RPM package monorepo: 42 hand-maintained packages plus the grouped
+RPM package monorepo: 43 hand-maintained packages plus the grouped
 `texlive-texmf` (one spec, subpackages per TL collection group — see
 `tools/texlive-splitter/`), built with
 [anda](https://github.com/terrapkg/packages) (mock backend) in CI. Two
@@ -45,7 +45,7 @@ GPG_KEY_ID=<fpr> ci/publish-r2.sh rpms srpms   # R2 bucket (texlive-texmf)
   highest batch of anything it BuildRequires. Packages within one batch build
   in parallel and must never depend on each other. Wave N publishes to the
   Pages repo before wave N+1 builds — dependents install from the published
-  repo, so PRs validate against the *last published* state. **Batch 3 =
+  repo, so PRs validate against the *last published* state. **Batch 4 =
   texlive-texmf**, its own wave, published to R2 (one atomic spec; a single
   multi-hour build job must not gate the hand packages).
 - **Adding a package = 4 files**: `anda/<pkg>/<pkg>.spec` (from
@@ -114,8 +114,12 @@ GPG_KEY_ID=<fpr> ci/publish-r2.sh rpms srpms   # R2 bucket (texlive-texmf)
     tarball; bat renamed `completions/` to `autocomplete/`).
 - **The buildroot is `mock/halcyon-f44-x86_64.cfg`** (Fedora 44 + updates, the
   published Pages repo, the R2 `[halcyon-texlive]` repo, and
-  `copr://lionheartp/Hyprland` as a direct baseurl — that Copr supplies
-  `glaze-static`, `hyprtoolkit`, `hyprwire`, `wlroots`…).
+  `copr://lionheartp/Hyprland` as a direct baseurl). The hyprwm externals the
+  repo used to pull from that Copr — `glaze`, `hyprwire`, `hyprtoolkit` —
+  are packaged in-repo (batches 0–2); `wlroots` ships in Fedora 44 itself
+  (0.20.2, unversioned main package) and is used straight from there.
+  the Copr entry stays only as a lowest-priority bootstrap for fresh
+  checkouts, since the Pages repo (priority 10) wins once a wave publishes.
   It ships inside the builder image: changing `mock/**` or
   `.github/builder/**` requires a `builder-docker.yml` image rebuild before
   builds work.

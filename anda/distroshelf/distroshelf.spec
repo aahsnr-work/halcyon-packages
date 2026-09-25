@@ -8,6 +8,7 @@
 Name:           distroshelf
 Version:	1.5.2
 Release:        1%{?dist}
+%define debug_package %{nil}
 Summary:        Container manager for container-based workflows
 License:        GPL-3.0-or-later
 URL:            https://github.com/ranfdev/DistroShelf

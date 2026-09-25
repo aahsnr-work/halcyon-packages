@@ -7,6 +7,7 @@
 Name:    qt6ct
 Version: 0.11
 Release: 15%{?dist}
+%define debug_package %{nil}
 Summary: Qt6 - Configuration Tool
 
 License: BSD-2-Clause

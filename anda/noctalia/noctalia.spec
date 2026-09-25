@@ -2,9 +2,10 @@
 %global shortcommit     %(c=%{commit}; echo ${c:0:7})
 %global upstreamname    noctalia
 
-Name:   	noctalia-git
+Name:   	noctalia
 Version:	5.1.0^25.%{shortcommit}
 Release:	1%{?dist}
+%define debug_package %{nil}
 Summary:	A sleek, customizable desktop shell crafted for Wayland.
 
 License:	MIT
@@ -57,7 +58,6 @@ Recommends:     ddcutil
 Recommends:     gpu-screen-recorder
 Recommends:     power-profiles-daemon
 
-Conflicts:      noctalia
 
 %description
 %{summary}

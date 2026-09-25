@@ -31,7 +31,7 @@ build` itself, so unchecked items carry their open work inline.
 - [x] **aquamarine** (batch 1) — 0.15.1 — source build (hyprwm)
 - [x] **hyprcursor** (batch 1) — 0.1.13 — source build (hyprwm)
 - [x] **hyprgraphics** (batch 1) — 0.5.1 — source build (hyprwm)
-- [x] **hyprland-git** (batch 2) — 0.56.2^58.git<sha> — source build (main-branch pin, the ~15-minute one)
+- [x] **hyprland** (batch 2) — 0.56.2^58.git<sha> — source build (main-branch pin, the ~15-minute one)
 - [x] **hyprland-guiutils** (batch 1) — 0.2.2 — source build (hyprwm)
 - [x] **hyprland-protocols** (batch 0) — 0.7.1 — source build (hyprwm, cmake since v0.7.1); **first anda build green (2026-09-24)**
 - [x] **hyprland-qt-support** (batch 1) — 0.1.0 — source build (hyprwm)
@@ -40,7 +40,7 @@ build` itself, so unchecked items carry their open work inline.
 - [x] **hyprshutdown** (batch 1) — 0.1.1 — source build (hyprwm)
 - [x] **hyprutils** (batch 0) — 0.14.2 — source build (hyprwm); **first anda build green (2026-09-24)**
 - [x] **hyprwayland-scanner** (batch 0) — 0.4.6 — source build (hyprwm)
-- [x] **noctalia-git** (batch 0) — 5.1.0^18.git<sha> — source build (main-branch pin)
+- [x] **noctalia** (batch 0) — 5.1.0^18.git<sha> — source build (main-branch pin)
 - [x] **noctalia-greeter-git** (batch 0) — 1.5.0^8.git<sha> — source build (main-branch pin)
 - [x] **pyprland** (batch 0) — 3.4.4 — source build (hatchling wheel + compiled C client, AUR PKGBUILD)
 - [x] **xdg-desktop-portal-hyprland** (batch 1) — 1.4.1 — source build (hyprwm)
@@ -117,7 +117,7 @@ Notes from the first runs:
    RPM signing key for `ci/publish.sh` (notes/anda-setup.md has the commands).
 3. Run `anda-build.yml` with an empty `only`: batch 0 (33 packages) builds,
    publishes to Pages; batch 1 (8 packages) sees it in the buildroot; batch 2
-   (`hyprland-git`) last.
+   (`hyprland`) last.
 4. Watch the Actions run — the wave jobs name their package in the job title.
 
 `xwiimote-ng` has never been through a validated build (neither under Copr nor
@@ -179,7 +179,7 @@ here) — treat its first anda build as the validation.
 - **Sweep verification**: the 42 `update.rhai` sweepers have not run
   end-to-end yet — dispatch `anda-update.yml` manually and check the produced
   bump PR before trusting the daily cron (the rhai ports of the
-  snapshot-counter packages — hyprland-git, the noctalia pair — carry the
+  snapshot-counter packages — hyprland, the noctalia pair — carry the
   most logic). Smoke-tested so far: `anda update qt6ct` runs green and
   no-ops on the current pin; the `gh()`-based sweepers need
   `GITHUB_TOKEN` (CI passes `github.token`; the gh() 401 on this box was the

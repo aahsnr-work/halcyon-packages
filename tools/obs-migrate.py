@@ -8,11 +8,9 @@ Generates and (with --apply) applies the OBS metadata:
            creatable by regular accounts on build.opensuse.org, and
            download-on-demand external repos (the lionheartp/Hyprland Copr)
            are admin-gated there (HTTP 403) — so the Copr is NOT attached:
-           the four external hyprwm deps (glaze-devel, hyprtoolkit,
-           hyprwire, wlroots) must instead be packaged in the project
-           itself; until then hyprland-git, hyprland-guiutils,
-           hyprshutdown, hyprpwcenter, noctalia-greeter-git and nwg-look
-           fail to resolve their BuildRequires.
+           the external hyprwm deps (glaze, hyprwire, hyprtoolkit) are
+           packaged in the repo itself instead (anda/glaze, anda/hyprwire,
+           anda/hyprtoolkit); wlroots ships in Fedora 44.
   package: one per ci/packages.toml entry, scmsync pointing at this repo's
            `anda/<pkg>` subdirectory, tracking main
 

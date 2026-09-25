@@ -133,7 +133,7 @@ package plus every higher batch. Secrets: `GPG_PRIVATE_KEY` (+ optional
   `hyprwayland-scanner`, `hyprland-protocols`, `hyprland-qt-support`,
   `aquamarine`, `hyprcursor`, `hyprgraphics`, `hyprland-guiutils`,
   `hyprpwcenter`, `hyprshutdown`, `xdg-desktop-portal-hyprland`,
-  `hyprland-git`), noctalia (`noctalia-git`, `noctalia-greeter-git`), the
+  `hyprland`), noctalia (`noctalia`, `noctalia-greeter-git`), the
   Hyprland-ecosystem apps (`nwg-look`, `qt6ct` — from
   LionHeartP/hyprlandRPM), the binary/tool wrappers (`bun`, `dust`,
   `lazygit`, `pandoc`, `starship`, `yazi`, `zellij`, `zotero`,
@@ -159,7 +159,7 @@ package plus every higher batch. Secrets: `GPG_PRIVATE_KEY` (+ optional
 - **Wrappers** — upstream-binary repackages (bun, dust, lazygit, pandoc,
   starship, yazi, zellij, zotero, xwiimote-ng), Arch-PKGBUILD style: mock
   downloads the release artifact at SRPM-build time, the spec repackages it.
-- **Source builds** — noctalia-git, noctalia-greeter-git, hyprland-git and the
+- **Source builds** — noctalia, noctalia-greeter-git, hyprland and the
   imported Hyprland libraries build from source tarballs / git archives.
 
 ## Details worth knowing

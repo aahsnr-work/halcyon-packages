@@ -11,14 +11,18 @@
 # --with-build-id). Packages inside one batch must therefore never depend on
 # each other.
 #
-# Build-time dependencies that Fedora 44 does not provide (glaze-static,
-# hyprtoolkit, hyprwire, ...) come from copr://lionheartp/Hyprland, which the
-# halcyon mock config (mock/halcyon-f44-x86_64.cfg, shipped in the builder
-# image) carries as a build-time repo.
+# Build-time dependencies that Fedora 44 does not provide are packaged in
+# THIS repo (glaze, hyprwire, hyprtoolkit — ports of the lionheartp/Hyprland
+# Copr specs; the fourth Copr input, wlroots, ships in Fedora 44 itself and
+# is used straight from there). The Copr remains in the mock config only
+# as a lowest-priority bootstrap for fresh checkouts; once a wave publishes,
+# our own repo (priority 10) wins the same-named packages.
 #
 # batch 0  roots: Fedora-only build deps (plus the wrapper/binary packages)
 # batch 1  first level: everything that links against batch 0
-# batch 2  hyprland-git, which links against batch 0 and batch 1
+# batch 2  hyprland, hyprtoolkit — links against batch 0 and batch 1
+# batch 3  the hyprtoolkit dependents (guiutils/pwcenter/shutdown)
+# batch 4  texlive-texmf, its own wave
 
 # --------------------------------------------------------------- desktops
 
@@ -35,6 +39,11 @@ batch = 0
 [hyprland-protocols]
 batch = 0
 
+# glaze: header-only JSON library (provides glaze-static/glaze-devel for
+# hyprland and hyprshutdown). Ported from LionHeartP/hyprlandRPM.
+[glaze]
+batch = 0
+
 # --- batch 1 ------------------------------------------------------------
 # hyprland-qt-support needs hyprlang, so it cannot share hyprlang's batch.
 [hyprland-qt-support]
@@ -49,18 +58,12 @@ batch = 1
 [hyprgraphics]
 batch = 1
 
-[hyprland-guiutils]
+# hyprwire: hyprland's wire-protocol IPC library (needs hyprutils).
+[hyprwire]
 batch = 1
 
-[hyprpwcenter]
-batch = 1
-
-[hyprshutdown]
-batch = 1
-
-[noctalia-git]
-batch = 0
-
+# greeter: all its build deps come from Fedora 44 (wlroots 0.20.2 devel
+# is in Fedora proper)
 [noctalia-greeter-git]
 batch = 0
 
@@ -73,8 +76,27 @@ batch = 1
 batch = 0
 
 # --- batch 2 ------------------------------------------------------------
-[hyprland-git]
+# hyprland: git snapshot (main-branch pin), the ~15-minute one. Needs
+# glaze (batch 0) and hyprwire (batch 1) from this repo.
+[hyprland]
 batch = 2
+
+# hyprtoolkit: the GUI toolkit for guiutils/pwcenter/shutdown (needs
+# aquamarine + hyprgraphics from batch 1).
+[hyprtoolkit]
+batch = 2
+
+# --- batch 3 ------------------------------------------------------------
+# the hyprtoolkit dependents: hyprtoolkit is batch 2, these must wait for
+# it to publish.
+[hyprland-guiutils]
+batch = 3
+
+[hyprpwcenter]
+batch = 3
+
+[hyprshutdown]
+batch = 3
 
 # ------------------------------------------------------------------- apps
 # bun tracks terrapkg's spec: the -baseline build of bun's release zip
@@ -202,4 +224,4 @@ batch = 0
 # maintainer step (a new snapshot = new %files lists), not a sweep. Own batch:
 # the multi-hour build must not sit in the same wave as the hand packages.
 [texlive-texmf]
-batch = 3
+batch = 4

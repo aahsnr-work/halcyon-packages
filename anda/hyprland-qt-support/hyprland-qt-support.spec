@@ -1,6 +1,7 @@
 Name:           hyprland-qt-support
 Version:        0.1.0
 Release:        12%{?dist}
+%define debug_package %{nil}
 Summary:        A Qt6 Qml style provider for hypr* apps
 License:        BSD-3-Clause
 URL:            https://github.com/hyprwm/hyprland-qt-support

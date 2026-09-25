@@ -7,6 +7,7 @@
 Name:           gnuplot
 Version:        6.0.5
 Release:        1%{?dist}
+%define debug_package %{nil}
 Summary:        Program for plotting functions and data
 License:        gnuplot
 URL:            http://gnuplot.info

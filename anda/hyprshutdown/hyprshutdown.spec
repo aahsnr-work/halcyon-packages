@@ -1,6 +1,7 @@
 Name:    	hyprshutdown
 Version: 	0.1.1
 Release: 	3%{?dist}
+%define debug_package %{nil}
 Summary: 	A graceful shutdown utility for Hyprland
 License: 	BSD-3-Clause
 URL:     	https://github.com/hyprwm/hyprshutdown
@@ -18,7 +19,7 @@ BuildRequires: 	pkgconfig(pixman-1)
 BuildRequires: 	pkgconfig(wayland-client)
 BuildRequires: 	systemd-devel
 
-Requires:	(hyprland or hyprland-git)
+Requires:	hyprland
 Requires:	systemd
 
 %description

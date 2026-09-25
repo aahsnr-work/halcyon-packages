@@ -81,6 +81,7 @@ jobs:
       batch1: ${{ steps.split.outputs.batch1 }}
       batch2: ${{ steps.split.outputs.batch2 }}
       batch3: ${{ steps.split.outputs.batch3 }}
+      batch4: ${{ steps.split.outputs.batch4 }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -262,17 +263,93 @@ jobs:
     with:
       batch: 2
 
-  # the texlive-texmf wave: ONE atomic spec (all collection groups, one
-  # snapshot), own batch so the multi-hour build never gates the hand
-  # packages. Published to the R2 bucket — beyond the Pages budget.
   build3:
-    name: "batch 3 — texlive-texmf"
+    name: "batch 3"
     needs: [manifest, publish2]
     if: >
       always() &&
       needs.manifest.result == 'success' &&
       (needs.publish2.result == 'success' || needs.publish2.result == 'skipped') &&
       needs.manifest.outputs.batch3 != ''
+    strategy:
+      matrix:
+        pkg: ${{ fromJson(needs.manifest.outputs.batch3) }}
+      fail-fast: false
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.BUILDER_IMAGE }}
+      options: --cap-add=SYS_ADMIN --privileged
+    steps:
+      - name: Workspace safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@v7
+      - name: anda build
+        run: anda build -c "$MOCK_CONFIG" "${{ matrix.pkg.pkg }}"
+      - name: Upload RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: "3-${{ matrix.pkg.arch }}-${{ matrix.pkg.pkg }}"
+          path: |
+            anda-build/rpm/rpms/*
+            anda-build/rpm/srpm/*
+          if-no-files-found: error
+
+  publish3:
+    name: "publish batch 3"
+    needs: [manifest, build3]
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      (needs.build3.result == 'success' || needs.build3.result == 'skipped') &&
+      needs.manifest.outputs.batch3 != ''
+    uses: ./.github/workflows/anda-publish.yml
+    secrets: inherit
+    with:
+      batch: 3
+
+  # the texlive-texmf wave: ONE atomic spec (all collection groups, one
+  # snapshot), own batch so the multi-hour build never gates the hand
+  # packages. Published to the R2 bucket — beyond the Pages budget.
+  build4:
+    name: "batch 4 — texlive-texmf"
+    needs: [manifest, publish3]
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      (needs.publish3.result == 'success' || needs.publish3.result == 'skipped') &&
+      needs.manifest.outputs.batch4 != ''
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.BUILDER_IMAGE }}
+      options: --cap-add=SYS_ADMIN --privileged
+    steps:
+      - name: Workspace safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@v7
+      - name: anda build
+        run: anda build -c "$MOCK_CONFIG" anda/texlive-texmf
+      - name: Upload RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: "4-x86_64-texlive-texmf"
+          path: |
+            anda-build/rpm/rpms/*
+            anda-build/rpm/srpm/*
+          if-no-files-found: error
+
+  publish4:
+    name: "publish batch 4 — texlive to R2"
+    needs: [manifest, build4]
+    if: >
+      always() &&
+      needs.manifest.result == 'success' &&
+      (needs.build4.result == 'success' || needs.build4.result == 'skipped') &&
+      needs.manifest.outputs.batch4 != ''
+    uses: ./.github/workflows/anda-publish.yml
+    secrets: inherit
+    with:
+      batch: 4
+      target: r2
     runs-on: ubuntu-latest
     container:
       image: ${{ env.BUILDER_IMAGE }}
