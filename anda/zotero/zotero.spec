@@ -63,7 +63,7 @@ rm %{buildroot}%{bundledir}/zotero.desktop
 # upstream's Exec wraps a bash -c with $(dirname $(realpath ...)); F44's
 # desktop-file-validate rejects a bare $ inside a quoted value — escape the
 # command substitutions (transparent to the shell that later expands them)
-sed -i 's/\$(/\\$($/g' %{buildroot}%{_appsdir}/zotero.desktop
+sed -i 's/\$(/\\$(/g' %{buildroot}%{_appsdir}/zotero.desktop
 
 for size in 32 64 128; do
     install -Dpm644 %{buildroot}%{bundledir}/icons/icon${size}.png \

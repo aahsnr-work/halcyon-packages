@@ -1,9 +1,12 @@
 # Ported from the AUR PKGBUILD (aur.archlinux.org, h=pyprland) on 2026-09-22
 # and adapted to Fedora RPM idioms. Follows the PKGBUILD's build flow:
-# python -m build --wheel -> %pyproject_wheel; the compiled C client
+# python -m build --wheel (the pyproject wheel macro); the compiled C client
 # (client/pypr-client) is built with gcc and installed next to the Python
 # entry points. Runtime deps mirror the PKGBUILD's depends/optdepends.
 # The old halcyon-only systemd user unit was dropped (not in the PKGBUILD).
+# NOTE: no macros in comments — rpm expands them even there (the pyproject
+# wheel macro's multi-line body exploding inside this comment killed the
+# 2026-09-25 CI build).
 Name:           pyprland
 Version:        3.4.4
 Release:        1%{?dist}
