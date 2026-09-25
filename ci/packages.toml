@@ -62,10 +62,11 @@ batch = 1
 [hyprwire]
 batch = 1
 
-# greeter: all its build deps come from Fedora 44 (wlroots 0.20.2 devel
-# is in Fedora proper)
+# the greeter is standalone (all build deps are Fedora 44; wlroots ships in
+# Fedora proper), but it builds one wave after noctalia by design so the
+# shell is always published first
 [noctalia-greeter-git]
-batch = 0
+batch = 1
 
 [xdg-desktop-portal-hyprland]
 batch = 1
