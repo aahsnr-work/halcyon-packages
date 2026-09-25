@@ -3,8 +3,9 @@
 
 Generates and (with --apply) applies the OBS metadata:
 
-  project: home:<user>:halcyon — Fedora 44 target (x86_64) with the
-           lionheartp/Hyprland Copr attached as a download-on-demand repo
+  project: halcyon041 (same name as the OBS user) — Fedora 44 target
+           (x86_64) with the lionheartp/Hyprland Copr attached as a
+           download-on-demand repo
   package: one per ci/packages.toml entry, scmsync pointing at this repo's
            `anda/<pkg>` subdirectory, tracking main
 
@@ -73,13 +74,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--user", default=os.environ.get("OBS_USER"),
                     help="OBS login (or set OBS_USER)")
-    ap.add_argument("--project", help="default: home:<user>:halcyon")
+    ap.add_argument("--project", help="default: the OBS user name (halcyon041)")
     ap.add_argument("--apply", action="store_true",
                     help="actually run the osc commands")
     args = ap.parse_args()
     if not args.user:
         sys.exit("set OBS_USER or pass --user")
-    project = args.project or f"home:{args.user}:halcyon"
+    project = args.project or args.user
 
     pkgs = packages()
     print(f"# {len(pkgs)} packages -> {project} (excluded: {sorted(EXCLUDE)})\n")
@@ -103,7 +104,7 @@ def main():
             if rc != 0:
                 sys.exit(f"failed: {pkg}")
         print(f"\nDone. Monitor: osc results -l {project}  "
-              f"Repos: https://download.opensuse.org/repositories/{project.replace(':', ':')}/")
+              f"Repos: https://download.opensuse.org/repositories/{project}/")
     else:
         print("# dry run — pass --apply to execute")
 

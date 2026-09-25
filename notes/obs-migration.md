@@ -5,18 +5,19 @@ Status: **GitHub side done; OBS side pending one token.**
 - ✅ GitHub repo pushed with the full project (`60a9f72`, main, public) —
   scmsync builds from it.
 - ✅ Migration script: `tools/obs-migrate.py` — generates the project meta
-  (Fedora 44 target, x86_64, publish enabled, lionheartp/Hyprland Copr
-  attached as a download-on-demand repo) and one scmsync package meta per
+  for project **`halcyon041`** (same name as the OBS user; Fedora 44 target,
+  x86_64, publish enabled, lionheartp/Hyprland Copr attached as a
+  download-on-demand repo) and one scmsync package meta per
   `ci/packages.toml` entry (`?subdir=anda/<pkg>#main`), excluding
   texlive-texmf. Dry-runs clean (41 packages).
 - ⏳ OBS side needs an OBS login (build.opensuse.org) + `osc` auth:
   `pip install osc` (or distro package), `osc` login once, then:
-      OBS_USER=<login> tools/obs-migrate.py --apply
+      OBS_USER=halcyon041 tools/obs-migrate.py --apply
   Precondition: `osc ls Fedora:44` must list the Fedora 44 target (if the
   public instance lacks it yet, point the repo path at a DoD Fedora 44
   baseurl instead — same `<download>` mechanism as the Copr).
 - ⏳ After first builds go green: flip `repo/halcyon-packages.repo` to
-  `https://download.opensuse.org/repositories/home:<login>:halcyon/Fedora_44/`
+  `https://download.opensuse.org/repositories/halcyon041/Fedora_44/`
   with the project GPG key, then retire the Actions build workflow (keep the
   sweep — merging its bump PRs to main is what triggers OBS rebuilds).
 
@@ -56,8 +57,9 @@ hosted services GitHub is strictly better for this repo.
    for OBS; `rustflags_debuginfo 0`, `-- --locked`, the shebang-mangler
    undefine and `%_smp_build_ncpus` all carry over (OBS workers set their
    own ncpu — control via project config `BuildFlags: jobs`? verify).
-6. **texlive-texmf stays on R2**: multi-GB in a shared home: project is
-   impolite (disk quotas) and its build would hog shared workers; the
+6. **texlive-texmf stays on R2**: multi-GB on the shared public
+   instance is impolite (disk quotas) and its build would hog shared
+   workers; the
    current self-built R2 flow is the right home for it.
 7. **Version sweeps**: `anda update` / update.rhai becomes a small GitHub
    Action that pushes bump commits (bump tag + spec Version); OBS rebuilds
@@ -65,7 +67,7 @@ hosted services GitHub is strictly better for this repo.
 
 ## Execution steps (when credentials exist)
 
-1. `osc` + token; create `home:<user>:halcyon` project, add Fedora 44 +
+1. `osc` + token; create the `halcyon041` project, add Fedora 44 +
    updates repo path + lionheartp/Hyprland baseurl.
 2. Per hand package: `osc meta pkg ... -e` with `scmsync =
    https://github.com/aahsnr-work/halcyon-packages#<tag>` (one scmsync
