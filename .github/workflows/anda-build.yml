@@ -68,7 +68,7 @@ jobs:
               echo "no builder-image run for ${{ github.sha }} — image unchanged"
               exit 0
             fi
-            read -r status conclusion <<<"$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" --jq '"\(.status) \(.conclusion // \"-\")"')"
+            read -r status conclusion <<<"$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" --jq '.status + " " + (.conclusion // "-")')"
             if [ "$status" = completed ]; then
               [ "$conclusion" = success ] || { echo "builder-image run $run_id: $conclusion"; exit 1; }
               echo "builder-image run $run_id is green"
