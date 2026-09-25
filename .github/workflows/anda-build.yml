@@ -40,7 +40,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  BUILDER_IMAGE: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
   MOCK_CONFIG: halcyon-f44-x86_64
 
 jobs:
@@ -111,11 +110,15 @@ jobs:
           set -eu
           # Word splitting on SELECT_ARGS is intended — it is a flag list.
           # shellcheck disable=SC2086
-          python3 ci/matrix.py $SELECT_ARGS | python3 - "$GITHUB_OUTPUT" <<'PY'
+          python3 ci/matrix.py $SELECT_ARGS > /tmp/matrix.out
+          # the matrix output is read from a file: feeding it through a pipe
+          # alongside the heredoc below would make the heredoc override the
+          # pipe and the parser would see nothing
+          python3 - "$GITHUB_OUTPUT" /tmp/matrix.out <<'PY'
           import json, sys
           out = sys.argv[1]
           matrix, batches = [], []
-          for line in sys.stdin:
+          for line in open(sys.argv[2]):
               if line.startswith("build_matrix="):
                   matrix = json.loads(line[len("build_matrix="):].strip())
               elif line.startswith("batches="):
@@ -145,7 +148,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.BUILDER_IMAGE }}
+      image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
       options: --cap-add=SYS_ADMIN --privileged
     steps:
       - name: Workspace safe
@@ -189,7 +192,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.BUILDER_IMAGE }}
+      image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
       options: --cap-add=SYS_ADMIN --privileged
     steps:
       - name: Workspace safe
@@ -233,7 +236,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.BUILDER_IMAGE }}
+      image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
       options: --cap-add=SYS_ADMIN --privileged
     steps:
       - name: Workspace safe
@@ -277,7 +280,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.BUILDER_IMAGE }}
+      image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
       options: --cap-add=SYS_ADMIN --privileged
     steps:
       - name: Workspace safe
@@ -320,7 +323,7 @@ jobs:
       needs.manifest.outputs.batch4 != ''
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.BUILDER_IMAGE }}
+      image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
       options: --cap-add=SYS_ADMIN --privileged
     steps:
       - name: Workspace safe
