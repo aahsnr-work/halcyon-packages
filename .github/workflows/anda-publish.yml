@@ -57,6 +57,14 @@ jobs:
           pattern: "${{ inputs.batch }}-*"
           merge-multiple: true
           path: rpms
+      - name: Flatten the artifact layout
+        run: |
+          set -eu
+          # upload-artifact preserves the anda-build/rpm path prefix, so the
+          # merged download nests the wave's output as rpms/rpms (and
+          # rpms/srpms) instead of flat rpms/ — which is what the split step
+          # and ci/publish.sh expect. Flatten before anything else.
+          find rpms -mindepth 2 -type f -name '*.rpm' -exec mv -v {} rpms/ \;
       - name: Split source RPMs out
         run: |
           set -eu
