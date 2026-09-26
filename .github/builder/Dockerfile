@@ -1,6 +1,9 @@
 FROM registry.fedoraproject.org/fedora-minimal:44
 
 # Build context: the repository root (docker build -f .github/builder/Dockerfile .)
+# Rebuilt automatically by .github/workflows/builder-docker.yml whenever
+# anything under .github/builder/ changes; copr-build's validate job waits
+# for this image's run of the same commit before submitting anything.
 #
 # The post-anda image: CI runs the version sweeper (ci/sweep/sweep.py),
 # generates SRPMs (spectool + rpmbuild -bs) and drives Copr (copr-cli) in
