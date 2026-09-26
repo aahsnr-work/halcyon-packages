@@ -20,19 +20,25 @@ License:        LicenseRef-Google-Antigravity
 URL:            https://antigravity.google/
 # Google's per-release execution ID in the download URL
 %global ide_build 4923483625488384
-#!RemoteAsset
-Source0:        https://dl.google.com/release2/j0qc3/antigravity/stable/%{version}-%{ide_build}/linux-x64/Antigravity%%20IDE.tar.gz
-Source1:        antigravity-ide.sh
-Source2:        antigravity-ide.desktop
-Source3:        antigravity-ide-url-handler.desktop
-Source4:        antigravity-ide.appdata.xml
-Source5:        antigravity-ide-workspace.xml
-Source6:        https://registry.npmjs.org/@parcel/watcher-linux-x64-glibc/-/watcher-linux-x64-glibc-2.5.6.tgz
+# the vendor tarball keeps a percent-encoded URL basename which the Copr
+# lookaside cannot serve (its stored name decodes to a space at lookup), so
+# it is fetched during the build instead of riding in the SRPM — the texlive
+# groups' pattern — with the AUR's b2sum pinned here and verified after the
+# download
+%global vendor_b2sum c016152db0e08f3c49ee353481135c4285ac9f837da295021600464a41b7ee054d5e72ba0e1462d1c26e6bab0b06e1dcf6346f8df015acf2f1dc24ed03e65264
+Source0:        antigravity-ide.sh
+Source1:        antigravity-ide.desktop
+Source2:        antigravity-ide-url-handler.desktop
+Source3:        antigravity-ide.appdata.xml
+Source4:        antigravity-ide-workspace.xml
+Source5:        https://registry.npmjs.org/@parcel/watcher-linux-x64-glibc/-/watcher-linux-x64-glibc-2.5.6.tgz
 
 ExclusiveArch:  x86_64
 
 # the automatic check stage validates the packaged .desktop files
 BuildRequires:  desktop-file-utils
+# the vendor tarball fetch in the prep stage
+BuildRequires:  curl
 
 # AUR depends= mapped to Fedora package names
 Requires:       alsa-lib
@@ -79,10 +85,13 @@ desktop integration files.
 
 %prep
 %setup -q -c -T
-# sources referenced via SOURCE0/SOURCE6 — the vendor tarball keeps its URL
-# basename ("Antigravity%%20IDE.tar.gz"), not a spec-derived name
-tar -xzf %{SOURCE0}
-tar -xzf %{SOURCE6} package/watcher.node
+# the vendor tarball: fetched here because its percent-encoded basename
+# breaks the Copr lookaside lookup; digest pinned in vendor_b2sum above
+curl -fsSL --retry 3 -o vendor.tar.gz \
+    "https://dl.google.com/release2/j0qc3/antigravity/stable/%{version}-%{ide_build}/linux-x64/Antigravity%%20IDE.tar.gz"
+echo "%{vendor_b2sum}  vendor.tar.gz" | b2sum -c -
+tar -xzf vendor.tar.gz
+tar -xzf %{SOURCE5} package/watcher.node
 
 %install
 install -dm755 %{buildroot}/opt %{buildroot}%{_bindir} \
