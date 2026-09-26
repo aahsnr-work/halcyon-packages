@@ -11,7 +11,7 @@
 
 %global crate tealdeer
 
-Name:           rust-tealdeer
+Name:           tealdeer
 Version:        1.9.0
 Release:        1%{?dist}
 Summary:        Fetch and show tldr help pages for many CLI commands
@@ -35,14 +35,14 @@ offline client with caching support.}
 
 %description %{_description}
 
-%package     -n %{crate}
+%package
 Summary:        %{summary}
 # aggregate of every linked crate's license, as carried by LICENSE.dependencies
 License:        (0BSD OR MIT OR Apache-2.0) AND (Apache-2.0 AND ISC) AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR MIT) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (MIT OR Apache-2.0) AND (MIT OR Zlib OR Apache-2.0) AND (Unlicense OR MIT) AND Apache-2.0 AND BSD-3-Clause AND CDLA-Permissive-2.0 AND ISC AND MIT AND Zlib
 
-%description -n %{crate} %{_description}
+%description %{_description}
 
-%files       -n %{crate}
+%files
 %license LICENSE-APACHE
 %license LICENSE-MIT
 %license LICENSE.dependencies

@@ -11,7 +11,7 @@
 
 %global crate bat
 
-Name:           rust-bat
+Name:           bat
 Version:        0.26.1
 Release:        1%{?dist}
 Summary:        Cat(1) clone with wings
@@ -34,14 +34,14 @@ A cat(1) clone with wings.}
 
 %description %{_description}
 
-%package     -n %{crate}
+%package
 Summary:        %{summary}
 # aggregate of every linked crate's license, as carried by LICENSE.dependencies
 License:        ((Apache-2.0 OR MIT) AND BSD-3-Clause) AND (0BSD OR MIT OR Apache-2.0) AND (Apache-2.0 OR BSL-1.0) AND (Apache-2.0 OR MIT) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (MIT OR Apache-2.0) AND (MIT OR Zlib OR Apache-2.0) AND (Unlicense OR MIT) AND (Zlib OR Apache-2.0 OR MIT) AND Apache-2.0 AND BSD-2-Clause AND LGPL-3.0-or-later AND MIT AND Unicode-3.0
 
-%description -n %{crate} %{_description}
+%description %{_description}
 
-%files       -n %{crate}
+%files
 %license LICENSE-APACHE
 %license LICENSE-MIT
 %license NOTICE

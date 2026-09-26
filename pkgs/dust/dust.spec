@@ -11,7 +11,7 @@
 
 %global crate du-dust
 
-Name:           rust-du-dust
+Name:           dust
 Version:        1.2.6
 Release:        1%{?dist}
 Summary:        More intuitive version of du
@@ -33,14 +33,14 @@ A more intuitive version of du.}
 
 %description %{_description}
 
-%package     -n dust
+%package
 Summary:        %{summary}
 # aggregate of every linked crate's license, as carried by LICENSE.dependencies
 License:        ((MIT OR Apache-2.0) AND Unicode-3.0) AND (Apache-2.0 OR MIT) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (MIT OR Apache-2.0) AND (Unlicense OR MIT) AND (Zlib OR Apache-2.0 OR MIT) AND Apache-2.0 AND BSD-2-Clause AND MIT
 
-%description -n dust %{_description}
+%description %{_description}
 
-%files       -n dust
+%files
 %license LICENSE
 %license LICENSE.dependencies
 %doc README.md

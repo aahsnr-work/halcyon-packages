@@ -57,69 +57,15 @@ def custom_gnuplot(spec: SpecFile, pkg_dir: Path) -> None:
 
 
 def custom_hyprland(spec: SpecFile, pkg_dir: Path) -> None:
-    # hyprland tracks the current STABLE line, not main: hyprwm cuts a
-    # vX.Y.Z-b bugfix branch per release and there is no plain `stable`
-    # branch. The spec pins the branch tip: commit, commit date, total
-    # commit count and the bundled hyprland-protocols / udis86 submodule
-    # SHAs. A changed revision bumps the bumpver snapshot counter; a newer
-    # stable line (vX.(Y+1).Z-b) resets it first.
+    # hyprland tracks the newest upstream RELEASE only (maintainer: no git
+    # snapshots). Version is the plain release tag; the official
+    # source-vX.Y.Z.tar.gz asset bundles every subproject, so there is
+    # nothing else to pin — a new release is just a version bump.
     repo = "hyprwm/Hyprland"
-    old_base = feeds.find_group(r"(?m)^Version:[ \t]*([0-9.]+)", spec.text)
-    # the version base is the newest -b branch's release number, unprefixed
-    # (the release Source template carries the v itself)
-    branch = feeds.github_newest_release_branch(repo)
-    if not branch:
-        raise feeds.FeedError("hyprland: no vX.Y.Z-b stable branch found upstream")
-    new_tag = branch.removeprefix("v").removesuffix("-b")
-    old_commit = feeds.find_group(
-        r"(?m)^%global[ \t]+hyprland_commit[ \t]+(\S+)", spec.text)
-    new_commit = feeds.github_commit(repo, ref=branch)
-    new_commits = feeds.github_commits_count(repo, branch)
-    old_date = spec.get_global("commit_date") or ""
-    author_date = feeds.fetch_json(
-        f"{feeds.GITHUB_API}/repos/{repo}/commits/{new_commit}"
-    )["commit"]["author"]["date"]
-    new_date = feeds.format_commit_date(author_date)
-    old_protocols = feeds.find_group(
-        r"(?m)^%global[ \t]+protocols_commit[ \t]+(\S+)", spec.text)
-    new_protocols = feeds.github_contents_sha(
-        repo, "subprojects/hyprland-protocols", new_commit)
-    old_udis86 = feeds.find_group(
-        r"(?m)^%global[ \t]+udis86_commit[ \t]+(\S+)", spec.text)
-    new_udis86 = feeds.github_contents_sha(repo, "subprojects/udis86", new_commit)
-
-    for value in (new_tag, new_commit, new_commits, new_date, new_protocols, new_udis86):
-        if not value:
-            raise feeds.FeedError("hyprland: empty value from the GitHub API")
-
-    # pin the new revisions (set_global rewrites the %global line in place and
-    # leaves the %-macro indirections like hyprland_shortcommit intact)
-    spec.set_global("commits_count", new_commits)
-    changed = spec.set_global("commit_date", new_date)
-    if spec.set_global("hyprland_commit", new_commit):
-        changed = True
-    if spec.set_global("protocols_commit", new_protocols):
-        changed = True
-    if spec.set_global("udis86_commit", new_udis86):
-        changed = True
-
-    # snapshot counter: a new upstream tag resets it first, then any revision
-    # change bumps it
-    from vercmp import vercmp_rc
-
-    ec = vercmp_rc(old_base, new_tag)
-    bump = _parse_int(spec.get_global("bumpver"))
-    if ec == 12:
-        # new upstream tag: reset the counter and move the version base
-        spec.set_global("bumpver", "0")
-        spec.set_version_base(new_tag)
-        bump = 0
-    elif ec != 0:
-        raise feeds.FeedError(
-            f"hyprland: rpmdev-vercmp returned {ec} (upstream tag older than the spec?)")
-    if changed or old_commit != new_commit or old_protocols != new_protocols \
-            or old_udis86 != new_udis86 or old_date != new_date or new_tag != old_base:
-        spec.set_global("bumpver", str(bump + 1))
+    tag = feeds.github_release_tag(repo)
+    if not tag:
+        raise feeds.FeedError("hyprland: no release found upstream")
+    spec.set_version(tag.removeprefix("v"))
 
 
 def custom_marksman(spec: SpecFile, pkg_dir: Path) -> None:

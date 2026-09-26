@@ -99,8 +99,10 @@ def load_packages() -> dict[str, dict]:
     if not pkgs:
         die(f"{PACKAGES_FILE}: no packages defined")
     depths = sorted({meta["batch"] for meta in pkgs.values()})
-    if depths != list(range(len(depths))):
-        die(f"{PACKAGES_FILE}: batches must be contiguous starting at 0, got {depths}")
+    if not depths or depths[0] != 0:
+        die(f"{PACKAGES_FILE}: batches must start at 0, got {depths}")
+    # gaps are allowed — an intentionally empty dependency level (batch 4 is
+    # empty since onlyoffice moved to 3); waves with no members just skip
     return pkgs
 
 

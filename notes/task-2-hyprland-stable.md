@@ -28,3 +28,22 @@ fixes between releases). "Latest stable branch" therefore = the newest
 
 - Live sweep dry-run: hyprland resolved 0.56.2 from `v0.56.2-b` and detected
   the branch tip movement without writing (dry-run).
+
+## ADDENDUM 2026-09-26 — superseded: release-only tracking (maintainer)
+
+The maintainer wants the build version to show only RELEASES (no
+`^N.git<sha>` snapshots). The spec dropped the whole git-snapshot
+machinery (bumpver/commit/commits_count/commit_date globals, the commit-
+archive Source0 branch, the submodule Source2/3 + their %prep unpack and
+GIT_* seds) — the official `source-vX.Y.Z.tar.gz` release asset bundles
+every subproject (verified: 149 subproject files in the v0.56.2 tarball),
+so the release form needs no submodule pins at all. `custom_hyprland` is
+now a pure release tracker: `github_release_tag()` → `set_version()` —
+a new upstream release is just a version bump (Release resets to 1 per
+the anda semantics). Live check: sweep reports `unchanged: hyprland
+(0.56.2)` — the newest release is already the packaged version.
+
+Note: the ci/sweep equivalence harness cannot be rerun for this change —
+it compares against `anda update`, which no longer exists after the Copr
+migration. The divergence from the rhai semantics here is deliberate
+(release-only vs git-snapshot).

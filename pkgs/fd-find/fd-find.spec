@@ -9,7 +9,7 @@
 
 %global crate fd-find
 
-Name:           rust-fd-find
+Name:           fd-find
 Version:        10.5.0
 Release:        1%{?dist}
 Summary:        Simple, fast and user-friendly alternative to find
@@ -24,13 +24,13 @@ BuildRequires:  sccache
 %description
 %{summary}.
 
-%package     -n %{crate}
+%package
 Summary:        %{summary}
 
-%description -n %{crate}
+%description
 %{summary}.
 
-%files       -n %{crate}
+%files
 %license LICENSE-MIT LICENSE-APACHE
 %license LICENSE.dependencies
 %doc README.md

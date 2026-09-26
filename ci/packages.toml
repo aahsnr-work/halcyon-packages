@@ -113,7 +113,7 @@ repo = "hyprwm/hyprwire"
 # noctalia-nightly. The greeter is standalone (all build deps are Fedora 44;
 # wlroots ships in Fedora proper) and builds from the branch tip like hyprland
 [noctalia]
-batch = 0
+batch = 3
 
 [noctalia-greeter-git]
 batch = 1
@@ -461,10 +461,11 @@ custom = "qt6ct"
 # texlive: the Arch-style group split, rolled biweekly — 40 generated specs
 # (39 collection groups + texlive-meta) owned by the texlive roll workflow
 # (.github/workflows/texlive-update.yml -> tools/texlive-splitter/roll.py),
-# no updates tables (the Monday sweep never touches them). onlyoffice is the
-# other heavy wave item, a 363 MB vendor-RPM rewrap.
+# no updates tables (the Monday sweep never touches them). onlyoffice and
+# noctalia sit in batch 3 (the heavy vendor rewrap and the shell); batch 4
+# is intentionally empty.
 [onlyoffice-desktopeditors]
-batch = 4
+batch = 3
 
 [onlyoffice-desktopeditors.updates]
 feed = "github-release"

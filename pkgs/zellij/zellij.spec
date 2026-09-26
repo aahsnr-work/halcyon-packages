@@ -11,7 +11,7 @@
 
 %global crate zellij
 
-Name:           rust-zellij
+Name:           zellij
 Version:        0.45.1
 Release:        1%{?dist}
 Summary:        Terminal workspace with batteries included
@@ -46,14 +46,14 @@ A terminal workspace with batteries included.}
 
 %description %{_description}
 
-%package     -n %{crate}
+%package
 Summary:        %{summary}
 # aggregate of every linked crate's license, as carried by LICENSE.dependencies
 License:        ((Apache-2.0 OR MIT) AND BSD-3-Clause) AND (0BSD OR MIT OR Apache-2.0) AND (Apache-2.0 OR BSL-1.0) AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR MIT) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (BSD-2-Clause OR Apache-2.0 OR MIT) AND (CC0-1.0 OR MIT-0 OR Apache-2.0) AND (ISC AND (Apache-2.0 OR ISC) AND Apache-2.0 AND MIT AND BSD-3-Clause AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR ISC OR MIT-0)) AND (ISC AND (Apache-2.0 OR ISC)) AND (MIT AND BSD-3-Clause) AND (MIT OR Apache-2.0 OR BSD-2-Clause) AND (MIT OR Apache-2.0) AND (MIT OR Zlib OR Apache-2.0) AND (Unlicense OR MIT) AND (Zlib OR Apache-2.0 OR MIT) AND 0BSD AND Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-3-Clause AND CC0-1.0 AND ISC AND MIT AND MPL-2.0 AND Unicode-3.0 AND Zlib
 
-%description -n %{crate} %{_description}
+%description %{_description}
 
-%files       -n %{crate}
+%files
 %license LICENSE.md
 %license LICENSE.dependencies
 %doc README.md

@@ -11,7 +11,7 @@
 
 %global crate atuin
 
-Name:           rust-atuin
+Name:           atuin
 Version:        18.23.0
 Release:        1%{?dist}
 Summary:        Atuin - magical shell history
@@ -35,14 +35,14 @@ Atuin - magical shell history.}
 
 %description %{_description}
 
-%package     -n %{crate}
+%package
 Summary:        %{summary}
 # aggregate of every linked crate's license, as carried by LICENSE.dependencies
 License:        ((Apache-2.0 OR MIT) AND BSD-3-Clause) AND ((MIT OR Apache-2.0) AND Unicode-3.0) AND (0BSD OR MIT OR Apache-2.0) AND (Apache-2.0 AND ISC) AND (Apache-2.0 OR BSL-1.0 OR MIT) AND (Apache-2.0 OR BSL-1.0) AND (Apache-2.0 OR GPL-2.0-only) AND (Apache-2.0 OR MIT) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (BSD-2-Clause OR Apache-2.0 OR MIT) AND (BSD-2-Clause OR Apache-2.0) AND (MIT AND (MIT OR Apache-2.0)) AND (MIT AND BSD-3-Clause) AND (MIT OR Apache-2.0 OR BSD-1-Clause) AND (MIT OR Apache-2.0 OR CC0-1.0) AND (MIT OR Apache-2.0 OR LGPL-2.1-or-later) AND (MIT OR Apache-2.0 OR Zlib) AND (MIT OR Apache-2.0) AND (MIT OR Zlib OR Apache-2.0) AND (Unlicense OR MIT) AND (Zlib OR Apache-2.0 OR MIT) AND 0BSD AND Apache-2.0 AND BSD-3-Clause AND BSL-1.0 AND CC0-1.0 AND ISC AND MIT AND MPL-2.0 AND Unicode-3.0 AND Zlib
 
-%description -n %{crate} %{_description}
+%description %{_description}
 
-%files       -n %{crate}
+%files
 %license LICENSE
 %license LICENSE.dependencies
 %doc CHANGELOG.md

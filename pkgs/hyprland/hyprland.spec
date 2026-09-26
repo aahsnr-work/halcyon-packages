@@ -1,19 +1,8 @@
-%global hyprland_commit efb50993780079460b0cbed1363e2166a2de1d9f
-%global hyprland_shortcommit %(c=%{hyprland_commit}; echo ${c:0:7})
-%global bumpver 64
-%global commits_count 1
-%global commit_date Wed Aug 05 14:13:21 2026
-
-%global protocols_commit bd153e76f751f150a09328dbdeb5e4fab9d23622
-%global protocols_shortcommit %(c=%{protocols_commit}; echo ${c:0:7})
-
-%global udis86_commit 5336633af70f3917760a6d441ff02d93477b0c86
-%global udis86_shortcommit %(c=%{udis86_commit}; echo ${c:0:7})
-
-%global libxkbcommon_version 1.11.0
-
+# release-only tracking: Version is the newest upstream release tag (the
+# sweeper's custom feed bumps it); the official source-vX.Y.Z.tar.gz
+# release asset bundles all subprojects, so there are no submodule pins
 Name:           hyprland
-Version:	0.56.2%{?bumpver:^%{bumpver}.git%{hyprland_shortcommit}}
+Version:	0.56.2
 Release:        1%{?dist}
 %define debug_package %{nil}
 Summary:        Dynamic tiling Wayland compositor that doesn't sacrifice on its looks
@@ -27,15 +16,7 @@ Summary:        Dynamic tiling Wayland compositor that doesn't sacrifice on its 
 # protocols/idle.xml: LGPL-2.1-or-later
 License:        BSD-3-Clause AND BSD-2-Clause AND HPND-sell-variant AND LGPL-2.1-or-later
 URL:            https://github.com/hyprwm/Hyprland
-%if 0%{?bumpver}
-Source0:        %{url}/archive/%{hyprland_commit}/%{name}-%{hyprland_shortcommit}.tar.gz
-#!RemoteAsset
-Source2:        https://github.com/hyprwm/hyprland-protocols/archive/%{protocols_commit}/protocols-%{protocols_shortcommit}.tar.gz
-#!RemoteAsset
-Source3:        https://github.com/canihavesomecoffee/udis86/archive/%{udis86_commit}/udis86-%{udis86_shortcommit}.tar.gz
-%else
 Source0:        %{url}/releases/download/v%{version}/source-v%{version}.tar.gz
-%endif
 Source4:        macros.hyprland
 
 %{lua:
@@ -196,7 +177,7 @@ Requires:       pkgconfig(xkbcommon)
 
 
 %prep
-%autosetup -n %{?bumpver:Hyprland-%{hyprland_commit}} %{!?bumpver:hyprland-source} -N
+%autosetup -n hyprland-source -N
 # Fedora names it lua.pc . The correct version is ensured in the BuildRequires section
 sed -i 's/lua55/lua/g' CMakeLists.txt
 %if 0%{?fedora} == 43
@@ -204,17 +185,6 @@ sed -i 's/\.subview(/ .substr(/g' src/ipc/s1/S1.cpp
 sed -i '/return (.* || std::ranges::starts_with(str_view, prefixes));/c\
     auto check = [&](auto prefix) { return std::string(str_view.begin(), str_view.end()).starts_with(prefix); };\
     return (... || check(prefixes));' src/helpers/MiscFunctions.cpp
-%endif
-%if 0%{?bumpver}
-tar -xf %{SOURCE2} -C subprojects/hyprland-protocols --strip=1
-tar -xf %{SOURCE3} -C subprojects/udis86 --strip=1
-sed -e '/GIT_COMMIT_HASH/s/unknown/%{hyprland_commit}/' \
-    -e '/GIT_BRANCH/s/unknown/main/' \
-    -e '/GIT_COMMIT_DATE/s/unknown/%{commit_date}/' \
-    -e '/GIT_TAG/s/unknown/%{lua:print((macros.version:gsub('[%^~].*', '')))}/' \
-    -e '/GIT_DIRTY/s/unknown/clean/' \
-    -e '/GIT_COMMITS/s/0/%{commits_count}/' \
-    -i CMakeLists.txt
 %endif
 
 cp -p subprojects/hyprland-protocols/LICENSE LICENSE-hyprland-protocols

@@ -21,8 +21,8 @@
 %global _appsdir %{_datadir}/applications
 
 Name:           zotero
-Version:        10.0.4
-Release:        1%{?dist}
+Version:        10.0.3
+Release:        2%{?dist}
 Summary:        Collect, organize, cite, and share your research sources
 URL:            https://www.zotero.org/
 License:        AGPL-3.0-or-later

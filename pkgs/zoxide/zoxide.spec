@@ -11,7 +11,7 @@
 
 %global crate zoxide
 
-Name:           rust-zoxide
+Name:           zoxide
 Version:        0.10.0
 Release:        1%{?dist}
 Summary:        A smarter cd command for your terminal
@@ -26,13 +26,13 @@ BuildRequires:  sccache
 %description
 %{summary}.
 
-%package     -n %{crate}
+%package
 Summary:        %{summary}
 
-%description -n %{crate}
+%description
 %{summary}.
 
-%files       -n %{crate}
+%files
 %license LICENSE
 %license LICENSE.dependencies
 %doc README.md

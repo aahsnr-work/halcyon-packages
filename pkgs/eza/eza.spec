@@ -11,7 +11,7 @@
 
 %global crate eza
 
-Name:           rust-eza
+Name:           eza
 Version:        0.23.5
 Release:        1%{?dist}
 Summary:        Modern replacement for ls
@@ -34,14 +34,14 @@ A modern replacement for ls.}
 
 %description %{_description}
 
-%package     -n %{crate}
+%package
 Summary:        %{summary}
 # aggregate of every linked crate's license, as carried by LICENSE.dependencies
 License:        ((MIT OR Apache-2.0) AND Unicode-3.0) AND (0BSD OR MIT OR Apache-2.0) AND (Apache-2.0 OR BSL-1.0) AND (Apache-2.0 OR MIT) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (MIT OR Apache-2.0 OR CC0-1.0) AND (MIT OR Apache-2.0) AND (MIT OR Zlib OR Apache-2.0) AND (Unlicense OR MIT) AND EUPL-1.2 AND MIT AND MPL-2.0
 
-%description -n %{crate} %{_description}
+%description %{_description}
 
-%files       -n %{crate}
+%files
 %license LICENSE.txt
 %license LICENSES/CC-BY-4.0.txt
 %license LICENSES/EUPL-1.2.txt

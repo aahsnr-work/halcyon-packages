@@ -6,8 +6,8 @@
 # the @opencode scope; update.rhai resolves the scope dynamically in case
 # upstream moves it (like the legacy @opencode-ai one).
 Name:           opencode
-Version:        2.0.18
-Release:        1%{?dist}
+Version:        2.0.14
+Release:        5%{?dist}
 Summary:        AI coding agent for the terminal
 License:        MIT
 URL:            https://opencode.ai

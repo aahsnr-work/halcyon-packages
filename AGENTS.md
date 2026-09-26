@@ -61,9 +61,10 @@ mock -r /tmp/copr.cfg <srpm>
   submit in parallel and must never depend on each other. `copr-build.yml`
   submits wave-by-wave and waits between waves — each successful build is
   immediately visible to the project repo, which is how batch N+1 installs
-  batch N's output as BuildRequires. **Batch 4 = onlyoffice**;
-  **batch 5 = the 40 texlive rolling groups** (both heavy waves; same Copr
-  project, no separate publish target anymore).
+  batch N's output as BuildRequires. **Batch 3 = noctalia +
+  onlyoffice-desktopeditors (+ the hyprtoolkit GUI apps); batch 4 is
+  intentionally empty; batch 5 = the 40 texlive rolling groups** (gaps in
+  the batch sequence are allowed; empty waves just skip).
 - **Spec conventions** (terra-style, differ from Fedora defaults):
   - full URLs in `Source*` entries — the submit job's `spectool -g` fetches
     them before `rpmbuild -bs`; keep downloads out of `%prep` (read from

@@ -3,8 +3,9 @@
 # Replaces anda-build.yml + anda-publish.yml (the anda/mock/Pages era). Copr
 # now owns the build farm, the signing (per-project key) and the repo serving:
 #
-#   manifest   ci/matrix.py selects packages from the git push (changed dir +
-#              every higher batch) and emits one build_matrix per batch
+#   manifest   ci/matrix.py selects packages from the git push (changed dirs
+#              + their BuildRequires dependents) and emits one build_matrix
+#              per batch
 #   submitN    spectool -g + rpmbuild -bs per package (the specs carry full
 #              Source URLs — the old anda SRPM-fetch step, now explicit) and
 #              `copr-cli build --nowait halcyon <srpm>`; the build id lands in
@@ -572,11 +573,11 @@ jobs:
           done
           exit $rc
 
-  # batch 4: the onlyoffice rewrap (363 MB payload). Copr has no Pages
-  # budget — the R2 publish target is gone; the results land in the same
-  # project repo.
+  # batch 4 is intentionally empty (onlyoffice-desktopeditors and noctalia
+  # moved to batch 3) — submit4/wait4 stay for future waves and skip when
+  # the manifest emits no batch 4.
   submit4:
-    name: "submit batch 4 (onlyoffice)"
+    name: "submit batch 4 (empty; kept for future waves)"
     needs: [manifest, wait3]
     if: always() && needs.manifest.outputs.batch4 != '' && (needs.wait3.result == 'success' || needs.wait3.result == 'skipped')
     strategy:
@@ -630,7 +631,7 @@ jobs:
           retention-days: 3
 
   wait4:
-    name: "wait for batch 4 (onlyoffice)"
+    name: "wait for batch 4 (empty; kept for future waves)"
     needs: [manifest, submit4]
     if: always() && needs.manifest.outputs.batch4 != '' && needs.submit4.result == 'success'
     runs-on: ubuntu-latest
