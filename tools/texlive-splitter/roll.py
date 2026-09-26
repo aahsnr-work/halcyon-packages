@@ -23,10 +23,14 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import lzma
+import socket
 import subprocess
 import sys
 import tempfile
+import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import date, timedelta
 from pathlib import Path
@@ -50,9 +54,50 @@ def die(msg: str) -> None:
     raise SystemExit(1)
 
 
+# the roll only ever talks to the tlnet-archive host; every fetch is
+# validated against this set (SSRF guard: scheme, allowlisted host, resolved
+# global IPs, same-host redirects). Residual TOCTOU: urlopen re-resolves DNS
+# after the check — the allowlisted host is the practical stdlib bound.
+_ALLOWED_HOSTS = {urllib.parse.urlparse(ARCHIVE_ROOT).hostname}
+
+
+def _validate_url(url: str) -> None:
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https":
+        die(f"refusing non-https fetch: {url!r}")
+    host = (parsed.hostname or "").rstrip(".")
+    if not host or host not in _ALLOWED_HOSTS:
+        die(f"refusing fetch to non-allowed host {host!r}")
+    try:
+        infos = socket.getaddrinfo(host, parsed.port or 443)
+    except socket.gaierror as exc:
+        die(f"cannot resolve {host!r}: {exc}")
+    for info in infos:
+        addr = ipaddress.ip_address(info[4][0])
+        if not addr.is_global:
+            die(f"refusing fetch to non-public address {addr} ({host!r})")
+
+
+class _SameHostRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuse redirects that leave the allowlisted host; urllib's own
+    redirection cap (10) bounds the chain."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        host = (urllib.parse.urlparse(newurl).hostname or "").rstrip(".")
+        if host not in _ALLOWED_HOSTS:
+            raise urllib.error.HTTPError(
+                newurl, code, f"redirect to non-allowed host {host!r}",
+                headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_SameHostRedirect())
+
+
 def _open(url: str):
+    _validate_url(url)
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    return urllib.request.urlopen(req, timeout=120)
+    return _OPENER.open(req, timeout=120)
 
 
 def snapshot_tlpdb_url(snapshot: str, archive_root: str) -> str:

@@ -422,15 +422,6 @@ batch = 0
 feed = "custom"
 custom = "antigravity_cli"
 
-# podman-desktop: source build with the upstream-bundled Electron (Fedora
-# has no electron43); pnpm 11 via npm per the packageManager pin.
-[podman-desktop]
-batch = 0
-
-[podman-desktop.updates]
-feed = "github-release"
-repo = "podman-desktop/podman-desktop"
-
 # nwg-displays: pure-Python nwg-shell output configurator (note the plural
 # — upstream is nwg-piotr/nwg-displays).
 [nwg-displays]

@@ -7,17 +7,81 @@ the environment provides one, exactly like the rhai helpers did.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import re
+import socket
 import subprocess
+import urllib.error
+import urllib.parse
 import urllib.request
 
 GITHUB_API = "https://api.github.com"
 
+# the complete set of upstream hosts any feed may talk to (the GitHub hosts
+# serve the standard feeds; the rest serve the custom feeds in custom.py).
+# A new feed host means adding it here — one reviewable line.
+ALLOWED_HOSTS = frozenset({
+    "api.github.com",
+    "github.com",
+    "raw.githubusercontent.com",
+    "sourceforge.net",
+    "aur.archlinux.org",
+    "registry.npmjs.org",
+    "opencode.ai",
+    "www.opencode.net",
+})
+
 
 class FeedError(Exception):
     """A feed could not produce a version (bad upstream data, no match)."""
+
+
+def validate_url(url: str) -> None:
+    """Outbound-fetch guard (SSRF): only allowlisted http(s) hosts whose
+    DNS answers with globally routable addresses — no loopback, private,
+    link-local or reserved space, and no redirect-driven escape (the shared
+    opener enforces the same set on redirects). Residual TOCTOU: urlopen
+    re-resolves DNS after this check; the allowlisted host is the practical
+    stdlib bound."""
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise FeedError(f"refusing non-http(s) fetch: {url!r}")
+    host = (parsed.hostname or "").rstrip(".")
+    if not host or host not in ALLOWED_HOSTS:
+        raise FeedError(f"refusing fetch to non-allowlisted host {host!r}")
+    try:
+        infos = socket.getaddrinfo(
+            host, parsed.port or (443 if parsed.scheme == "https" else 80))
+    except socket.gaierror as exc:
+        raise FeedError(f"cannot resolve {host!r}: {exc}") from exc
+    for info in infos:
+        addr = ipaddress.ip_address(info[4][0])
+        if not addr.is_global:
+            raise FeedError(
+                f"refusing fetch to non-public address {addr} ({host!r})")
+
+
+class _AllowlistedRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuse redirects that leave the allowlisted host set; urllib's own
+    redirection cap (10) bounds the chain."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        host = (urllib.parse.urlparse(newurl).hostname or "").rstrip(".")
+        if host not in ALLOWED_HOSTS:
+            raise urllib.error.HTTPError(
+                newurl, code,
+                f"redirect to non-allowlisted host {host!r}", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_AllowlistedRedirect())
+
+
+def _open(req: urllib.request.Request, timeout: int = 60):
+    """The single egress point for every feed fetch."""
+    return _OPENER.open(req, timeout=timeout)
 
 
 def _gh_headers() -> dict[str, str]:
@@ -42,11 +106,12 @@ def _headers_for(url: str) -> dict[str, str]:
 
 
 def _get(url: str) -> urllib.request.Request:
+    validate_url(url)
     return urllib.request.Request(url, headers=_headers_for(url))
 
 
 def fetch_text(url: str) -> str:
-    with urllib.request.urlopen(_get(url), timeout=60) as resp:
+    with _open(_get(url)) as resp:
         return resp.read().decode()
 
 
@@ -100,8 +165,7 @@ def github_latest_tag(repo: str) -> str:
     for _ in range(20):  # 20 pages = 2000 tags; no halcyon upstream goes near it
         if not url:
             break
-        req = urllib.request.Request(url, headers=_headers_for(url))
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with _open(_get(url)) as resp:
             names.extend(t["name"] for t in json.loads(resp.read().decode()))
             url = _next_link(resp.headers.get("Link", ""))
     if not names:

@@ -206,6 +206,7 @@ def custom_opencode_desktop(spec: SpecFile, pkg_dir: Path) -> None:
         "https://opencode.ai/download/stable/linux-x64-rpm",
         headers={"User-Agent": "halcyon-packages-sweeper"},
     )
+    feeds.validate_url(req.full_url)
     try:
         urllib.request.build_opener(_NoRedirect).open(req, timeout=60)
     except urllib.error.HTTPError as exc:

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-RPM package monorepo: 60 hand-maintained packages plus the 40 generated
+RPM package monorepo: 59 hand-maintained packages plus the 40 generated
 `texlive-*` rolling groups (39 Arch-style collection-group specs +
 `texlive-meta`, regenerated per tlnet snapshot — see `tools/texlive-splitter/`),
 built on **Fedora Copr**

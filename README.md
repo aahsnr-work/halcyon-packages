@@ -47,7 +47,7 @@ flowchart LR
     end
     subgraph waves["copr-build.yml — sequential waves, parallel inside"]
         direction LR
-        B0["batch 0 — 45<br/>foundations + CLI tools"]
+        B0["batch 0 — 44<br/>foundations + CLI tools"]
         B1["batch 1 — 5<br/>hyprwm libs"]
         B2["batch 2 — 4<br/>cursor · toolkit · portal"]
         B3["batch 3 — 6<br/>hyprland · noctalia · onlyoffice"]
@@ -63,7 +63,7 @@ flowchart LR
 
 | wave | contents |
 |---|---|
-| **0** (45) | hyprwm foundations (`hyprutils`, `hyprlang`, `hyprwayland-scanner`, `hyprland-protocols`, `glaze`) · rust CLI tools (`atuin`, `bat`, `dust`, `eza`, `starship`, `tealdeer`, `texlab`, `yazi`, `zellij`, `zoxide`, `fd-find`, `cliphist`) · vendor apps (`bun`, `bitwarden`, `obsidian`, `opencode`, `opencode-desktop`, `pixi`, `uv`, `ticktick`, `zotero`, `marksman`, `lazygit`, `pandoc`, `ferdium`, `antigravity-ide`, `antigravity-cli`) · source builds (`fzf`, `fzy`, `kilo`, `podman-desktop`, `nwg-displays`) · `cava`, `chafa`, `gnuplot`, `kitty`, `distroshelf`, `nwg-look`, `qt6ct`, `pyprland`, `xwiimote-ng` |
+| **0** (44) | hyprwm foundations (`hyprutils`, `hyprlang`, `hyprwayland-scanner`, `hyprland-protocols`, `glaze`) · rust CLI tools (`atuin`, `bat`, `dust`, `eza`, `starship`, `tealdeer`, `texlab`, `yazi`, `zellij`, `zoxide`, `fd-find`, `cliphist`) · vendor apps (`bun`, `bitwarden`, `obsidian`, `opencode`, `opencode-desktop`, `pixi`, `uv`, `ticktick`, `zotero`, `marksman`, `lazygit`, `pandoc`, `ferdium`, `antigravity-ide`, `antigravity-cli`) · source builds (`fzf`, `fzy`, `kilo`, `nwg-displays`) · `cava`, `chafa`, `gnuplot`, `kitty`, `distroshelf`, `nwg-look`, `qt6ct`, `pyprland`, `xwiimote-ng` |
 | **1** (5) | `aquamarine`, `hyprgraphics`, `hyprlang`, `hyprwire`, `noctalia-greeter-git` |
 | **2** (4) | `hyprcursor`, `hyprland-qt-support`, `hyprtoolkit`, `xdg-desktop-portal-hyprland` |
 | **3** (6) | `hyprland`, `hyprland-guiutils`, `hyprpwcenter`, `hyprshutdown`, `noctalia`, `onlyoffice-desktopeditors` |
