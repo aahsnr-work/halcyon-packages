@@ -1,4 +1,5 @@
-# update — daily upstream version sweep (replaces anda-update.yml).
+# update — upstream version sweep, chained to the cascade (replaces
+# anda-update.yml).
 #
 # Runs ci/sweep/sweep.py (the Python port of the 48 update.rhai scripts — the
 # anda migration). The sweeper edits specs in place and writes only real
@@ -21,10 +22,13 @@
 name: update
 
 on:
-  schedule:
-    # weekly: Mondays 04:17 UTC (the original daily cadence was tightened to
-    # a weekly review cycle)
-    - cron: "17 04 * * 1"
+  # no timer: the sweep is chained to the cascade — it runs when
+  # copr-build finishes (workflow_run), and can be dispatched manually.
+  # A bump's own cascade re-triggers the sweep once more; that second run
+  # finds nothing upstream and exits without committing, so the chain ends.
+  workflow_run:
+    workflows: [copr-build]
+    types: [completed]
   workflow_dispatch:
     inputs:
       mode:
@@ -48,6 +52,9 @@ concurrency:
 
 jobs:
   sweep:
+    # workflow_run fires for failed cascades too — sweep only after a
+    # successful one (a failed cascade published nothing new)
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     container:
