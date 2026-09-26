@@ -352,6 +352,94 @@ batch = 0
 feed = "custom"
 custom = "obsidian"
 
+# The TODO round-2 additions (Sept 2026): a mix of vendor rewraps
+# (opencode-desktop, ferdium, the Google antigravity pair) and source
+# builds (fzf binary wrapper, fzy, kilo tree wrapper, podman-desktop,
+# nwg-displays) — all batch-0 leaves.
+
+# fzf: release-binary wrapper (single static Go binary; completions
+# generated from the binary itself at install time). Shadows Fedora's
+# identical version so updates land here first.
+[fzf]
+batch = 0
+
+[fzf.updates]
+feed = "github-release"
+repo = "junegunn/fzf"
+
+# fzy: small C fuzzy finder, plain source build (Fedora ships it in
+# nothing relevant; upstream tags v1.1 and 1.1 at the same commit).
+[fzy]
+batch = 0
+
+[fzy.updates]
+feed = "github-tag"
+repo = "jhawthorn/fzy"
+
+# kilo: Kilo Code CLI tree wrapper per the AUR kilo-bin PKGBUILD. The
+# GitHub tag space is polluted by jetbrains/* tags — the npm dist-tag is
+# the channel the CLI's own updater follows.
+[kilo]
+batch = 0
+
+[kilo.updates]
+feed = "custom"
+custom = "kilo"
+
+# opencode-desktop: vendor RPM rewrap (bundled Electron). The version is
+# resolved from the 302 target of opencode.ai's stable download endpoint.
+[opencode-desktop]
+batch = 0
+
+[opencode-desktop.updates]
+feed = "custom"
+custom = "opencode_desktop"
+
+# ferdium: vendor RPM rewrap on the ticktick pattern; tags and releases
+# are 1:1 on ferdium-app.
+[ferdium]
+batch = 0
+
+[ferdium.updates]
+feed = "github-release"
+repo = "ferdium/ferdium-app"
+
+# antigravity-ide / antigravity-cli: Google's proprietary vendor payloads;
+# the download URLs embed per-release execution ids Google exposes nowhere,
+# so both sweep the AUR maintainer's pins (RPC pkgver + the PKGBUILD's
+# _build for the ide).
+[antigravity-ide]
+batch = 0
+
+[antigravity-ide.updates]
+feed = "custom"
+custom = "antigravity_ide"
+
+[antigravity-cli]
+batch = 0
+
+[antigravity-cli.updates]
+feed = "custom"
+custom = "antigravity_cli"
+
+# podman-desktop: source build with the upstream-bundled Electron (Fedora
+# has no electron43); pnpm 11 via npm per the packageManager pin.
+[podman-desktop]
+batch = 0
+
+[podman-desktop.updates]
+feed = "github-release"
+repo = "podman-desktop/podman-desktop"
+
+# nwg-displays: pure-Python nwg-shell output configurator (note the plural
+# — upstream is nwg-piotr/nwg-displays).
+[nwg-displays]
+batch = 0
+
+[nwg-displays.updates]
+feed = "github-tag"
+repo = "nwg-piotr/nwg-displays"
+
 # ------------------------------------------------------------------- apps
 # distroshelf: GNOME container manager, meson+cargo per upstream's meson.build
 # (crates fetched during the build — the project runs --enable-net on).

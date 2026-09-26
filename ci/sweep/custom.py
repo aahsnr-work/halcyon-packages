@@ -31,6 +31,41 @@ def _parse_int(value: str | None) -> int:
         return 0
 
 
+def _aur_pkgver(pkg: str) -> str:
+    """pkgver of an AUR package (pkgrel stripped) — for vendor apps whose
+    only version tracker is the AUR maintainer."""
+    data = feeds.fetch_json(
+        "https://aur.archlinux.org/rpc/v5/info?arg%5B%5D=" + pkg)
+    results = data.get("results") or []
+    aur_version = results[0]["Version"] if results else ""
+    if not aur_version:
+        raise feeds.FeedError(f"{pkg}: the AUR RPC returned no version")
+    return aur_version.rsplit("-", 1)[0]
+
+
+def custom_antigravity_cli(spec: SpecFile, pkg_dir: Path) -> None:
+    # the AUR pkgver carries the full "1.2.10_4751581200121856" pair; the
+    # spec keeps the dotted version and pins the build id in the cli_build
+    # global that the Source URL interpolates
+    pkgver = _aur_pkgver("antigravity-cli")
+    m = re.fullmatch(r"([0-9.]+)_(\d+)", pkgver)
+    if not m:
+        raise feeds.FeedError(f"antigravity-cli: unexpected AUR pkgver {pkgver!r}")
+    spec.set_version(m.group(1))
+    spec.set_global("cli_build", m.group(2))
+
+
+def custom_antigravity_ide(spec: SpecFile, pkg_dir: Path) -> None:
+    # no first-party feed — the download URL embeds a per-release execution
+    # id Google does not expose anywhere — so mirror the AUR maintainer's
+    # pins: pkgver for the version, the PKGBUILD's _build for the id
+    pkgver = _aur_pkgver("antigravity-ide")
+    pkgtxt = feeds.fetch_text(
+        "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=antigravity-ide")
+    spec.set_version(pkgver)
+    spec.set_global("ide_build", feeds.find_group(r"(?m)^_build=(\d+)", pkgtxt))
+
+
 def custom_bitwarden(spec: SpecFile, pkg_dir: Path) -> None:
     # bitwarden/clients cuts other tags too; the raw-text scan picks the first
     # desktop-v tag of the releases list (GitHub orders newest-first).
@@ -66,6 +101,13 @@ def custom_hyprland(spec: SpecFile, pkg_dir: Path) -> None:
     if not tag:
         raise feeds.FeedError("hyprland: no release found upstream")
     spec.set_version(tag.removeprefix("v"))
+
+
+def custom_kilo(spec: SpecFile, pkg_dir: Path) -> None:
+    # the GitHub tag space is polluted by jetbrains/* tags; the npm dist-tag
+    # is the channel the CLI's own updater follows
+    data = feeds.fetch_json("https://registry.npmjs.org/@kilocode/cli/latest")
+    spec.set_version(data["version"])
 
 
 def custom_marksman(spec: SpecFile, pkg_dir: Path) -> None:
@@ -147,6 +189,31 @@ def custom_opencode(spec: SpecFile, pkg_dir: Path) -> None:
             "https://registry.npmjs.org/" + scope
             + "%2Fcli-linux-x64/-/cli-linux-x64-%{version}.tgz",
         )
+
+
+def custom_opencode_desktop(spec: SpecFile, pkg_dir: Path) -> None:
+    # the desktop app ships through opencode.ai's own stable download
+    # endpoint, which 302s to the versioned RPM; the version is read off the
+    # redirect target (no first-party release feed)
+    import urllib.error
+    import urllib.request
+
+    class _NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+
+    req = urllib.request.Request(
+        "https://opencode.ai/download/stable/linux-x64-rpm",
+        headers={"User-Agent": "halcyon-packages-sweeper"},
+    )
+    try:
+        urllib.request.build_opener(_NoRedirect).open(req, timeout=60)
+    except urllib.error.HTTPError as exc:
+        location = exc.headers.get("Location", "")
+    else:
+        raise feeds.FeedError(
+            "opencode-desktop: the stable endpoint did not redirect")
+    spec.set_version(feeds.find_group(r"/files/bin/([0-9.]+)/", location))
 
 
 def custom_qt6ct(spec: SpecFile, pkg_dir: Path) -> None:

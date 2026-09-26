@@ -2,6 +2,7 @@
 anda-build/
 _srpms/
 tmp/
+.mimosa/
 # local work artefacts
 .obsidian/
 TaskNotes/
