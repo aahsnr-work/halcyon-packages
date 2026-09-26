@@ -102,7 +102,7 @@ rm -rf staging/texmf-dist/doc
 # old staging model; here it is derived from the fetched tree itself, in
 # mktexlsr's directory-blocked format (block per directory, entries under
 # it, every directory listed in its parent's block)
-( printf '%% ls-R -- filename database for kpathsea.\n%% Run mktexlsr to regenerate.\n'
+( printf '%%%% ls-R -- filename database for kpathsea.\n%%%% Run mktexlsr to regenerate.\n'
   cd staging/texmf-dist && find . -mindepth 1 | sed 's|^\./||' | LC_ALL=C sort \
   | awk -F/ '{ d="./"; for (i=1;i<NF;i++) d=d $i "/"; sub("/$", "", d); if (d!=p) { print d ":"; p=d } print $NF }'
 ) > staging/texmf-dist/ls-R
