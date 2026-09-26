@@ -22,10 +22,14 @@
 name: update
 
 on:
-  # no timer: the sweep is chained to the cascade — it runs when
-  # copr-build finishes (workflow_run), and can be dispatched manually.
-  # A bump's own cascade re-triggers the sweep once more; that second run
-  # finds nothing upstream and exits without committing, so the chain ends.
+  # two triggers, two purposes: the weekly cron is the floor (sweeps even in
+  # a week with no cascade), and the workflow_run chain sweeps right after
+  # every successful copr-build so fresh builds meet the newest upstream
+  # immediately. A bump's own cascade re-triggers the sweep once more; that
+  # second run finds nothing upstream and exits without committing, so the
+  # chain ends.
+  schedule:
+    - cron: "17 04 * * 1"
   workflow_run:
     workflows: [copr-build]
     types: [completed]
