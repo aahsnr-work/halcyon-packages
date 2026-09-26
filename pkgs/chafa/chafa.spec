@@ -10,7 +10,7 @@
 # The source tarball is fetched by mock at SRPM-build time (this repo keeps
 # downloads out of %prep; anda enables network for URL sources).
 Name:           chafa
-Version:        1.18.2
+Version:        1.18.3
 Release:        1%{?dist}
 %define debug_package %{nil}
 Summary:        Terminal graphics for the 21st century

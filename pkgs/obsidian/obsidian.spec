@@ -13,7 +13,7 @@
 #     when upstream publishes none (also resolves the old deferred blocker).
 #   * options=(!strip) -> debug_package/__os_install_post nil.
 %global             full_name obsidian
-%global             digest none
+%global             digest d3cbe375cbfa4024db1910b98191649f4134c5c48aee5e60b6e7713987dcdb28
 %global             debug_package %{nil}
 %global             __os_install_post %{nil}
 
