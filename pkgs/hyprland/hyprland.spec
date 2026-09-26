@@ -225,7 +225,8 @@ install -Dpm644 %{SOURCE4} -t %{buildroot}%{_rpmconfigdir}/macros.d
 %{_datadir}/hypr/
 %{_datadir}/wayland-sessions/hyprland.desktop
 %{_datadir}/xdg-desktop-portal/hyprland-portals.conf
-%{_userunitdir}/hyprland-session.target
+# 0.56.2 installs no systemd user units (the session target was dropped
+# upstream; uwsm's wayland-sessions entry replaces it)
 %{_mandir}/man1/hyprctl.1*
 %{_mandir}/man1/Hyprland.1*
 %{bash_completions_dir}/hypr*
