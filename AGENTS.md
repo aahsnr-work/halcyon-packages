@@ -1,149 +1,167 @@
 # AGENTS.md
 
-RPM package monorepo: 43 hand-maintained packages plus the grouped
-`texlive-texmf` (one spec, subpackages per TL collection group — see
-`tools/texlive-splitter/`), built with
-[anda](https://github.com/terrapkg/packages) (mock backend) in CI. Two
-publication targets: the hand packages as a GPG-signed dnf repo on **GitHub
-Pages** (the 1 GB budget constrains it), and the texlive-texmf set — far
-beyond that budget — on a **Cloudflare R2 bucket** (`ci/publish-r2.sh`). No
-Copr. Fedora 44 target.
+RPM package monorepo: 50 hand-maintained packages plus the 40 generated
+`texlive-*` rolling groups (39 Arch-style collection-group specs +
+`texlive-meta`, regenerated per tlnet snapshot — see `tools/texlive-splitter/`),
+built on **Fedora Copr**
+([aahsnr-work/halcyon](https://copr.fedorainfracloud.org/coprs/aahsnr-work/halcyon/),
+chroot `fedora-44-x86_64`) in CI. The repo itself carries only specs, the
+registry, the version sweeper and the workflows; Copr owns the build farm,
+the GPG signing and the repo hosting (consumers: `dnf copr enable
+aahsnr-work/halcyon fedora-44`). Fedora 44 target.
 
-Deep docs (don't duplicate them here): `notes/anda-setup.md` (setup +
-day-to-day), `Instructions.md` (recreating from zero), `TODO.md` (status).
+Deep docs (don't duplicate them here): `Instructions.md` (the pre-Copr
+from-zero guide, banner-marked historical), `TODO.md` (status). The Copr
+project settings and day-to-day commands live in README.md.
 
 ## Commands
 
-There is no test suite; verification = building the package.
+There is no test suite; verification = the Copr build going green.
 
 ```bash
-# build ONE package locally (same image CI uses)
-# (<pkg> is the anda alias for the project key anda/<pkg>/pkg)
-podman run --rm -it --privileged -v "$PWD":/h -w /h \
-  ghcr.io/aahsnr-work/halcyon-builder:f44 anda build <pkg> -c halcyon-f44-x86_64
+# submit ONE package to Copr (what copr-build.yml's submit jobs do)
+spectool -g -C _srpms/<pkg> pkgs/<pkg>/<pkg>.spec
+rpmbuild -bs --define "_sourcedir $PWD/_srpms/<pkg>" \
+         --define "_srcrpmdir $PWD/_srpms" \
+         --define "_specdir $PWD/pkgs/<pkg>" pkgs/<pkg>/<pkg>.spec
+copr-cli build --nowait halcyon _srpms/<pkg>-*.src.rpm
+copr-cli watch-build <id>; copr-cli status <id>
+# (rpmbuild/spectool/cop-cli: run inside the CI image or a fedora:44 container)
 
 # registry consistency + build plan (what CI's validate job runs)
 python3 ci/matrix.py --list
 python3 ci/matrix.py --list --since <sha>   # what a push would rebuild
 
-# local version sweep (GITHUB_TOKEN avoids API rate limits)
-GITHUB_TOKEN=$(gh auth token) anda update
+# the version sweep (what update.yml runs daily)
+GITHUB_TOKEN=$(gh auth token) python3 ci/sweep/sweep.py [--pkg <name>]
 
-# manual publish of a run's artifacts
-GPG_KEY_ID=<fpr> ci/publish.sh rpms srpms      # Pages (hand packages)
-GPG_KEY_ID=<fpr> ci/publish-r2.sh rpms srpms   # R2 bucket (texlive-texmf)
+# a mock buildroot identical to Copr's, for debugging a failed build locally
+copr-cli mock-config aahsnr-work/halcyon fedora-44-x86_64 > /tmp/copr.cfg
+mock -r /tmp/copr.cfg <srpm>
+
+# sweeper changes: rerun the equivalence harness (needs the builder
+# container — see the verify.py docstring for the podman one-liner)
+
+# the validate job lints the workflows with actionlint (pinned release +
+# checksum in copr-build.yml) — run it locally before pushing workflow edits
 ```
 
 ## Non-obvious rules
 
-- **A package without a `ci/packages.toml` entry is never built** — CI ignores
-  the directory. The registry is the dependency-order registry; the build
-  config itself lives in `anda/<pkg>/anda.hcl`. Generated texlive specs live
-  under `anda/texlive/…` — never hand-edit them (they are generator output;
-  see the header of any texlive-*.spec for the regeneration flow).
+- **A package without a `ci/packages.toml` entry is never built** — the
+  registry is the build selection AND the sweep-feed config. Adding a
+  package = 2 files: `pkgs/<pkg>/<pkg>.spec` (from `templates/*.spec.tmpl`)
+  and the registry entry (`batch` + `[pkg.updates]` feed). `nwg-look` and
+  `qt6ct` are the reference for ecosystem ports from
+  [LionHeartP/hyprlandRPM](https://github.com/LionHeartP/hyprlandRPM). The tree lived under `anda/` in the anda
+  era and was renamed `pkgs/` on 2026-09-25 — do not resurrect anda; the
+  specs are plain RPM.
 - **Batches are dependency levels**: a package's `batch` must be ≥ 1 + the
-  highest batch of anything it BuildRequires. Packages within one batch build
-  in parallel and must never depend on each other. Wave N publishes to the
-  Pages repo before wave N+1 builds — dependents install from the published
-  repo, so PRs validate against the *last published* state. **Batch 4 =
-  texlive-texmf**, its own wave, published to R2 (one atomic spec; a single
-  multi-hour build job must not gate the hand packages).
-- **Adding a package = 4 files**: `anda/<pkg>/<pkg>.spec` (from
-  `templates/source-build.spec.tmpl` or `binary-wrapper.spec.tmpl`),
-  `anda/<pkg>/anda.hcl` (from `templates/anda.hcl.tmpl`),
-  `anda/<pkg>/update.rhai` (from `templates/update.rhai.tmpl`, or the daily
-  sweep won't bump it), and the `ci/packages.toml` entry. nwg-look and qt6ct
-  are the reference for ecosystem ports from
-  [LionHeartP/hyprlandRPM](https://github.com/LionHeartP/hyprlandRPM) (the
-  source of the whole hyprwm/noctalia/xdg-portal set).
+  highest batch of anything it BuildRequires. Packages within one batch
+  submit in parallel and must never depend on each other. `copr-build.yml`
+  submits wave-by-wave and waits between waves — each successful build is
+  immediately visible to the project repo, which is how batch N+1 installs
+  batch N's output as BuildRequires. **Batch 4 = onlyoffice**;
+  **batch 5 = the 40 texlive rolling groups** (both heavy waves; same Copr
+  project, no separate publish target anymore).
 - **Spec conventions** (terra-style, differ from Fedora defaults):
-  - full URLs in `Source*` entries — mock fetches them at SRPM-build time;
-    keep downloads out of `%prep` (read from `%{_sourcedir}` or `%setup -a 0`).
+  - full URLs in `Source*` entries — the submit job's `spectool -g` fetches
+    them before `rpmbuild -bs`; keep downloads out of `%prep` (read from
+    `%{_sourcedir}` or `%setup -a 0`). Exception: the texlive group specs
+    have no URL Sources and wget their member tarballs from the dated
+    snapshot during `%build` (network is on in Copr builds; `wget` is a
+    BuildRequire).
   - explicit `Release: N%{?dist}` + a written `%changelog` — no
     rpmautospec/`%autorelease`.
   - **never mention macros textually in comments** — rpm expands macros
     inside comments too; `%gometa` in a comment killed a build (go/forge
     macros are defined in every buildroot). Name them without the `%`.
-  - build-time repos outside Fedora go in the package's `anda.hcl`
-    `rpm.extra_repos`, not the spec.
-  - **no debug* packages, for any package** — every spec carries
-    `%define debug_package %{nil}` (one line kills both the debuginfo and
-    debugsource subpackages), source builds included: debuginfo generation
-    significantly slows every build and the Pages budget has no room for the
-    output, and nothing in the halcyon image consumes debug packages.
+  - build-time repos outside Fedora/Terra go in the **Copr chroot's repo
+    list** (`copr-cli edit-chroot halcyon/fedora-44-x86_64 --repos …`), not
+    the spec. Currently configured: Terra 44 (supplies `anda-srpm-macros`
+    for the rust specs — NOT in Fedora 44) and `lionheartp/Hyprland`
+    (lowest-priority bootstrap only).
+  - _*no debug* packages, for any package_* — every spec carries
+    `%define debug_package %{nil}`; nothing in the halcyon image consumes
+    debug packages.
   - **prebuilt-binary wrappers need `%define debug_package %{nil}`** — a
     foreign binary yields an empty debugsource file list, which fails the
     build (the remaining wrappers — `bun`, `opencode`, the vendor apps —
-    carry it). Wrappers are only allowed when upstream itself
-    ships an RPM; otherwise the package is a source build.
+    carry it). Wrappers are only allowed when upstream itself ships an RPM
+    or a self-contained release archive; otherwise the package is a source
+    build.
   - **Rust packages build from source with the terra rust2rpm macro set**
-    (`anda-srpm-macros` + `cargo-rpm-macros`, both in Fedora 44):
-    `rust-<name>.spec` from terrapkg's `anda/langs/rust/` spec, crates.io
-    source via the `terra_crates_source` macro, `cargo_prep_online`,
-    `cargo_license_online` for `LICENSE.dependencies`, `-devel` +
-    feature subpackages (`starship` is the reference). Don't put that macro
-    in `Source:` — mock fetches sources before the buildroot macros exist
-    (starship lesson); spell out the static.crates.io URL there. Two more
-    hard-won rules, carried by every rust spec here: pass `-- --locked` to
-    the install macro — without it cargo re-resolves the dependency graph
-    ignoring upstream's Cargo.lock, and drifted crates fail to compile (eza
-    palette_derive, atuin's locked-tripwire); and undefine the shebang
-    mangler — vendored crate sources ship Rust inner attributes that the
-    debugsource scan misreads as shebangs. Crates.io source must exist for
-    the crate (pixi/yazi don't publish theirs; they take the GitHub tag
-    tarball + cargo_build instead, terra's own style). Rust builds also run
-    through **sccache with a workspace-persistent cache**: specs BuildRequire
-    sccache, use `cargo_prep_online_sccache`, and `export SCCACHE_DIR=/sccache`
-    in both build and install — the mock config bind-mounts
-    `/h/anda-build/sccache-cache` there, so the cache survives across
-    container runs and is shared by every rust build (verified against mock
-    6.8; the historical EBUSY teardown concern does not reproduce because
-    nspawn isolation kills chroot processes before mock unmounts). And
-    `%define rustflags_debuginfo 0` — with no debug packages shipped,
-    generating debuginfo is pure compile-time waste (`build_rustflags`
-    composes it from `rustflags_debuginfo`, so one define removes it from
-    both RUSTFLAGS and the cargo rpm profile).
-  - `install -t DIR SRC` keeps SRC's basename — `%files` must claim the name
-    as installed (bun's completions: `bun.bash` vs `bun` killed a build).
-    Prefer explicit `install -Dm644 SRC %{buildroot}%{dir}/NAME`.
+    (`anda-srpm-macros` from Terra + `cargo-rpm-macros` from Fedora;
+    `starship` is the reference). Don't put the crates.io URL macro in
+    `Source:` — spell out the static.crates.io URL (sources are fetched
+    before the buildroot macros exist). `-- --locked` on the install macro
+    (cargo re-resolution breaks drifted crates), undefine the shebang
+    mangler (vendored crate sources trip the debugsource scan), and
+    `%define rustflags_debuginfo 0` (no debug packages → debuginfo is pure
+    waste). `SCCACHE_DIR=/sccache` works on Copr — the cache is just
+    ephemeral per build now (the persistent bind mount was mock-local).
+  - `install -t DIR SRC` keeps SRC's basename — `%files` must claim the
+    name as installed (bun's completions: `bun.bash` vs `bun` killed a
+    build). Prefer explicit `install -Dm644 SRC %{buildroot}%{dir}/NAME`.
   - never use `%forgeautosetup`/`%forgemeta` without defining the forgemeta
     state — without it the archive dir name is derived wrong
     (`distroshelf` lesson). Use plain `%autosetup -n <archive-dir>`.
   - validate a spec against the UPSTREAM tarball, not from memory: release
     layouts drift (cava 1.0.0 dropped its changelog/man page from the
     tarball; bat renamed `completions/` to `autocomplete/`).
-- **The buildroot is `mock/halcyon-f44-x86_64.cfg`** (Fedora 44 + updates, the
-  published Pages repo, the R2 `[halcyon-texlive]` repo, and
-  `copr://lionheartp/Hyprland` as a direct baseurl). The hyprwm externals the
-  repo used to pull from that Copr — `glaze`, `hyprwire`, `hyprtoolkit` —
-  are packaged in-repo (batches 0–2); `wlroots` ships in Fedora 44 itself
-  (0.20.2, unversioned main package) and is used straight from there.
-  the Copr entry stays only as a lowest-priority bootstrap for fresh
-  checkouts, since the Pages repo (priority 10) wins once a wave publishes.
-  It ships inside the builder image: changing `mock/**` or
-  `.github/builder/**` requires a `builder-docker.yml` image rebuild before
-  builds work.
-- **Builds are capped at -j12** — `%_smp_build_ncpus` is pinned to 12 in the
-  mock config; every package derives its parallelism from that one macro
-  (cargo's `-j`, cmake/meson's `%_smp_mflags`, …). Don't set `-j` per-spec.
-- Touching `ci/`, `mock/`, `.github/builder/` or the root `anda.hcl` makes
-  `ci/matrix.py` rebuild *every* package (see `INFRA_PREFIXES` there).
-- A push to `main` rebuilds changed packages **plus every higher batch**;
-  the same cascade applies to the `only` input of the manual workflow run.
-- Version bumps are automatic (`anda-update.yml` opens one daily bump PR;
-  sweepers are `update.rhai` scripts using andax globals `gh()`,
-  `rpm.version()` … — see `templates/update.rhai.tmpl` for the API). Merging
-  the bump PR is what triggers the rebuild.
-- **Local builds run strictly ONE AT A TIME** (`podman`, never docker —
-  docker's AppArmor/seccomp stack breaks setuid-root `umount` at loader time,
-  which silently breaks mock's chroot teardown on some host kernels).
-  State/logs live under `/var/tmp/builds/` (never `/tmp` — session restarts
-  wipe it). Building dependent batches locally: `createrepo_c` over
-  `anda-build/rpm/rpms`, then `anda build <pkg> -c halcyon-f44-x86_64 -R
-  file:///h/anda-build/rpm`.
-- `xwiimote-ng` has never been through a validated build — its first run is
-  the validation; watch it.
-- texlive: the grouped spec is regenerated per snapshot by
-  `tools/texlive-splitter` (`--tlpdb-only`, `--no-docs` — a maintainer step,
-  not a sweep); the R2 flow needs the `R2_*` secrets/variables listed in
-  `notes/anda-setup.md`.
+  - **Copr's brp hooks are stricter than the old anda buildroot** and hard-
+    fail builds anda let pass: the shebang mangler (data-tree specs — the
+    texlive groups nil it for their upstream scripts), `check-rpaths`
+    (vendor ELFs with hard-coded rpaths) and rpm's `/usr/lib/.build-id`
+    link writing (nothing packages them when the debug package is off —
+    `%global _build_id_links none`). Vendor rewraps carry the full nil set:
+    `obsidian`, `onlyoffice-desktopeditors` and the texlive groups are the
+    references. Do not remove those defines.
+- **The buildroot is Copr's `fedora-44-x86_64` chroot** — there is no mock
+  config in-repo anymore. Buildroot-relevant changes (chroot repos,
+  additional packages) are Copr project settings: `copr-cli edit-chroot`.
+  Project settings: `--appstream off`, `--enable-net on`, build timeout
+  default 5 h (raisable to 50 h — onlyoffice needs ~1 h, the heavy texlive
+  groups 20-40 min each). Retention: the
+  newest successful build per package is kept, older builds pruned after 14
+  days; a failed build never replaces the published one.
+- **CI job image** (`.github/builder/Dockerfile`): fedora-minimal 44 +
+  copr-cli, python3, rpm-build, rpmdevtools, git, gh, jq — no anda, no
+  mock, no signing/publish tooling. Changing it requires a
+  `builder-docker.yml` image rebuild before CI jobs work (the validate job
+  waits for it automatically).
+- **CI authentication**: the `COPR_CLICONF` GitHub secret (content of
+  `~/.config/copr`) drives every copr-cli step. **The Copr API token
+  expires** — a wave of 401s in copr-build.yml means: regenerate at
+  <https://copr.fedorainfracloud.org/api/>, re-set the secret, re-run.
+- Touching `ci/**` or `.github/builder/**` makes `ci/matrix.py` rebuild
+  _every_ package (`INFRA_PREFIXES`).
+- A push to `main` rebuilds changed packages **plus every higher batch**
+  (wave-submitted); the same cascade applies to the `only` input of the
+  manual `copr-build.yml` run. PRs run validation only (no Copr builds).
+- **Version bumps are automatic** (`update.yml`, daily 04:17 UTC):
+  `ci/sweep/sweep.py` reads each package's `[pkg.updates]` table
+  (`feed = "github-release" | "github-tag" | "custom"` + `repo`) and edits
+  specs with the exact old-anda semantics (Version + Release reset only on
+  a real version change; `%global` rewrites preserve column formatting;
+  file written only on content change). Custom feeds live in
+  `ci/sweep/custom.py` (11 hand-ported feed logics; `hyprland`/
+  `noctalia-greeter-git` are git-snapshot trackers with `bumpver`/`^N`
+  counter semantics). Default mode commits bumps straight to main
+  (self-healing: a failed build leaves the published version untouched);
+  set the `UPDATE_MODE` repo variable to `pr` for a review gate. After
+  touching `ci/sweep/`, rerun `ci/sweep/verify.py` — the harness that
+  proved the port against `anda update` (42/46 byte-identical; it also
+  documents the four rhai bugs the port fixes).
+- `xwiimote-ng` had never been through a validated build until the Copr
+  cascade — its first green Copr build closes that item (watch it in
+  TODO.md).
+- texlive: 40 generated specs (the Arch-style `texlive-<group>` rolling
+  groups + `texlive-meta`) are rewritten wholesale per snapshot by the
+  biweekly roll — `.github/workflows/texlive-update.yml` (Wednesdays,
+  even ISO weeks; manual dispatch always) runs `tools/texlive-splitter/
+  roll.py` against the newest `texlive.info/tlnet-archive` daily snapshot.
+  They carry no `[pkg.updates]` tables and are never swept; never
+  hand-edit them. Their `%build` wgets each group's member tarballs from
+  the dated snapshot (no URL `Source` entries — spectool fetches nothing
+  for them).

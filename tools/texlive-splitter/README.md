@@ -5,9 +5,10 @@ package whose subpackages mirror Arch's grouping (texlive-basic,
 texlive-binextra, texlive-latexextra, texlive-fontsextra, texlive-lang*,
 texlive-doc, ...).
 
-Not wired into the Copr pipeline yet (see the repo TODO.md): the generated
-spec's `%files` lists reference the local install staging tree, so the staging
-tree has to be repackaged into real sources before it can build as an SRPM.
+Wired into CI via `adapt-spec.py` (see the repo TODO.md): the generated
+spec's `%files` lists reference the local install staging tree, so adapt-spec.py
+rewrites the spec to stage the snapshot from the dated archive at %build time
+before it can build as an SRPM.
 
 Usage:
 

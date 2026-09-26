@@ -253,84 +253,165 @@ def _scheme_collection_order(
 
 def _claim(groups, target, rf, files_seen):
     if rf in files_seen:
-        return
+        return False
     files_seen.add(rf)
     groups[target]["runfiles"].append(rf)
+    return True
 
-def generate_spec(
-    snapshot: str, staging: Path, outdir: Path, scheme: str = "scheme-medium",
-    docs: bool = True,
-) -> Path:
-    tlpdb = staging / "tlpkg" / "texlive.tlpdb"
-    packages = parse_tlpdb(tlpdb)
+
+def _collection_topo_order(
+    installed: set[str], packages: dict[str, dict]
+) -> list[str]:
+    """Collections in dependency order (a collection's dependencies before
+    it), alphabetical tie-break — so the shared infrastructure lands in
+    texlive-basic and each collection claims its own core members (the
+    latex package lands in texlive-latex, not wherever a scheme-list
+    accident put it). Cycle fallback: remaining collections alphabetically
+    (the tlpdb DAG is acyclic in practice)."""
+    import heapq
+
+    deps = {c: set() for c in installed}
+    rdeps = {c: set() for c in installed}
+    for c in installed:
+        for d in packages[c]["depend"]:
+            d = _dep_name(d)
+            if d in deps and d != c:
+                deps[c].add(d)
+                rdeps[d].add(c)
+    ready = [c for c in installed if not deps[c]]
+    heapq.heapify(ready)
+    out: list[str] = []
+    remaining = {c: len(deps[c]) for c in installed}
+    while ready:
+        c = heapq.heappop(ready)
+        out.append(c)
+        for r in rdeps[c]:
+            remaining[r] -= 1
+            if remaining[r] == 0:
+                heapq.heappush(ready, r)
+    out.extend(sorted(set(installed) - set(out)))
+    return out
+
+
+def partition(packages: dict[str, dict], scheme: str, docs: bool = False) -> dict[str, dict]:
+    """Claim-partition of a scheme's texmf-dist files into Arch-style groups.
+
+    Returns {group: {"members": sorted pkgs whose tarball the group must
+    fetch, "runfiles": [...], "depend": [other groups], "shortdesc": str}}.
+    A member lands in the FIRST collection's group that walks it and only
+    if it contributed at least one freshly claimed file (so bin-only
+    members are never fetched). Same semantics as the monolith generator.
+    """
     installed = resolve_scheme_collections(packages, scheme)
-    # process collections in the scheme's depend order so shared member
-    # packages are owned deterministically by the first claiming collection
     scheme_data = packages[scheme]
-    ordered = [
-        c
-        for c in _scheme_collection_order(scheme_data, packages, installed)
-        if c in installed
-    ]
+    ordered = _collection_topo_order(installed, packages)
 
     groups: dict[str, dict] = {}
     if docs:
-        groups["texlive-doc"] = {"runfiles": [], "depend": [], "execute": []}
+        groups["texlive-doc"] = {
+            "members": [], "runfiles": [], "depend": [], "shortdesc": "documentation",
+        }
     claimed: set[str] = set()
     # a shared file (fonts READMEs, doc/info) may be reached through several
     # member packages — rpm rejects duplicate %files entries, so the first
     # attribution wins everywhere
     files_seen: set[str] = set()
-    for pkgname in ordered:
-        data = packages[pkgname]
+
+    def _group_entry(group: str, collection: str) -> dict:
+        return groups.setdefault(
+            group,
+            {
+                "members": [],
+                "runfiles": [],
+                "depend": [],
+                "shortdesc": packages.get(collection, {}).get(
+                    "shortdesc", f"{group.removeprefix('texlive-')} collection"
+                ),
+            },
+        )
+
+    def _walk_member(dep: str, target: str) -> bool:
+        """Claim one member package's files for target; True if any landed."""
+        member = packages[dep]
+        contributed = False
+        # docfiles are the package's documentation — always texlive-doc
+        # (skipped entirely in no-docs builds)
+        for rf in member["docfiles"]:
+            if not docs:
+                continue
+            if rf.startswith("RELOC/"):
+                rf = "texmf-dist/" + rf[len("RELOC/"):]
+            if rf.startswith("texmf-dist/"):
+                contributed |= _claim(groups, "texlive-doc", rf, files_seen)
+        for rf in member["runfiles"]:
+            # RELOC/ marks files whose real root is the texmf tree
+            if rf.startswith("RELOC/"):
+                rf = "texmf-dist/" + rf[len("RELOC/"):]
+            # this set is noarch (BuildArch: noarch); the bin/ tree
+            # (texlive-bin sources) is a follow-up split of its own
+            if not rf.startswith("texmf-dist/"):
+                continue
+            if rf.startswith("texmf-dist/doc/"):
+                if not docs:
+                    continue
+                contributed |= _claim(groups, "texlive-doc", rf, files_seen)
+            else:
+                contributed |= _claim(groups, target, rf, files_seen)
+        return contributed
+
+    def _collection_group(pkgname: str) -> str | None:
         group = collection_to_group(pkgname)
         if group is None:
-            continue
-        groups.setdefault(group, {"runfiles": [], "depend": [], "execute": []})
-        for dep in data["depend"]:
+            return None
+        _group_entry(group, pkgname)
+        for dep in packages[pkgname]["depend"]:
             dep = _dep_name(dep)
             if dep.startswith("collection-"):
                 dep_group = collection_to_group(dep)
                 if dep_group and dep_group != group:
                     groups[group]["depend"].append(dep_group)
-        # transitive member closure: collections pull packages whose own
-        # depend lists pull more packages — every reached package's files
-        # belong to this collection's group (first claiming collection wins)
-        stack = [_dep_name(d) for d in data["depend"]]
+        return group
+
+    # pass 1: a collection's DIRECT (level-1, non-collection) members are
+    # its own — claim them for every collection first, so the latex package
+    # lands in texlive-latex even when some other collection's closure
+    # also reaches it
+    for pkgname in ordered:
+        group = _collection_group(pkgname)
+        if group is None:
+            continue
+        for dep in packages[pkgname]["depend"]:
+            dep = _dep_name(dep)
+            if dep.startswith("collection-") or dep not in packages:
+                continue
+            if _walk_member(dep, group):
+                groups[group]["members"].append(dep)
+        claimed.update(
+            _dep_name(d)
+            for d in packages[pkgname]["depend"]
+            if not _dep_name(d).startswith("collection-")
+            and _dep_name(d) in packages
+        )
+
+    # pass 2: transitive closures — packages a collection's members pull in
+    # that no level-1 claim took (first claiming collection wins)
+    for pkgname in ordered:
+        group = _collection_group(pkgname)
+        if group is None:
+            continue
+        stack = [_dep_name(d) for d in packages[pkgname]["depend"]]
         seen: set[str] = set()
         while stack:
             dep = stack.pop()
             if dep in seen or dep.startswith("collection-"):
                 continue
-            member = packages.get(dep)
-            if member is None:
+            if dep not in packages:
                 continue
             seen.add(dep)
+            member = packages[dep]
             stack.extend(_dep_name(d) for d in member["depend"])
-            # docfiles are the package's documentation — always texlive-doc
-            # (skipped entirely in --no-docs builds)
-            for rf in member["docfiles"]:
-                if not docs:
-                    continue
-                if rf.startswith("RELOC/"):
-                    rf = "texmf-dist/" + rf[len("RELOC/"):]
-                if rf.startswith("texmf-dist/"):
-                    _claim(groups, "texlive-doc", rf, files_seen)
-            for rf in member["runfiles"]:
-                # RELOC/ marks files whose real root is the texmf tree
-                if rf.startswith("RELOC/"):
-                    rf = "texmf-dist/" + rf[len("RELOC/"):]
-                # this set is noarch (BuildArch: noarch); the bin/ tree
-                # (texlive-bin sources) is a follow-up split of its own
-                if not rf.startswith("texmf-dist/"):
-                    continue
-                if rf.startswith("texmf-dist/doc/"):
-                    if not docs:
-                        continue
-                    _claim(groups, "texlive-doc", rf, files_seen)
-                else:
-                    _claim(groups, group, rf, files_seen)
-            groups[group]["execute"].extend(member["execute"])
+            if _walk_member(dep, group):
+                groups[group]["members"].append(dep)
         claimed.update(seen)
 
     # scheme-level plain deps no collection claims (e.g. scheme-small's
@@ -339,31 +420,28 @@ def generate_spec(
         dep = _dep_name(dep)
         if dep.startswith("collection-") or dep in claimed or dep not in packages:
             continue
+        _group_entry("texlive-basic", "collection-basic")
         claimed.add(dep)
-        member = packages[dep]
-        groups.setdefault("texlive-basic", {"runfiles": [], "depend": [], "execute": []})
-        for rf in member["docfiles"]:
-            if not docs:
-                continue
-            if rf.startswith("RELOC/"):
-                rf = "texmf-dist/" + rf[len("RELOC/"):]
-            if rf.startswith("texmf-dist/"):
-                _claim(groups, "texlive-doc", rf, files_seen)
-        for rf in member["runfiles"]:
-            if rf.startswith("RELOC/"):
-                rf = "texmf-dist/" + rf[len("RELOC/"):]
-            if not rf.startswith("texmf-dist/"):
-                continue
-            if rf.startswith("texmf-dist/doc/"):
-                if not docs:
-                    continue
-                _claim(groups, "texlive-doc", rf, files_seen)
-            else:
-                _claim(groups, "texlive-basic", rf, files_seen)
-        groups["texlive-basic"]["execute"].extend(member["execute"])
-        claimed.add(dep)
+        if _walk_member(dep, "texlive-basic"):
+            groups["texlive-basic"]["members"].append(dep)
 
-    # install-tl regenerates this manifest at the texmf root
+    for entry in groups.values():
+        entry["members"] = sorted(entry["members"])
+        entry["depend"] = sorted(set(entry["depend"]))
+        entry["runfiles"].sort()
+    return groups
+
+
+def generate_spec(
+    snapshot: str, staging: Path, outdir: Path, scheme: str = "scheme-medium",
+    docs: bool = True,
+) -> Path:
+    tlpdb = staging / "tlpkg" / "texlive.tlpdb"
+    packages = parse_tlpdb(tlpdb)
+    groups = partition(packages, scheme, docs=docs)
+
+    # install-tl regenerates this manifest at the texmf root; the tarball
+    # model regenerates it in %%build instead (emit_groups.py)
     groups["texlive-basic"]["runfiles"].append("texmf-dist/ls-R")
 
     subpackages = sorted(groups)
@@ -475,7 +553,8 @@ def main() -> None:
     spec = generate_spec(args.snapshot, staging, Path(args.out), args.scheme, docs=not args.no_docs)
     print(f"OK: generated {spec}")
     print("next: adapt-spec.py writes the buildable anda package spec,")
-    print("then publish to the R2 bucket (one snapshot for all groups).")
+    print("then run tools/texlive-splitter/adapt-spec.py and submit the package")
+print("to the Copr project (one snapshot for all groups).")
 
 
 if __name__ == "__main__":

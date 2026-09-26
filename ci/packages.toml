@@ -1,28 +1,34 @@
-# ci/packages.toml — the halcyon-packages build registry.
+# ci/packages.toml — the halcyon-packages build registry + sweep-feed config.
 #
-# Consumed by ci/matrix.py. One table per package; **a package without an
-# entry is not built**. The build configuration itself lives in each package's
-# anda/<pkg>/anda.hcl; this file is the dependency-order registry.
+# Consumed by ci/matrix.py (build selection) and ci/sweep/sweep.py (version
+# sweep). One table per package; **a package without an entry is not built**.
+# The specs themselves live in pkgs/<pkg>/<pkg>.spec.
 #
 # Batches are dependency levels, not parallel groups within one job:
-# anda-build.yml runs the waves sequentially and publishes each wave to the
-# Pages repo before the next one starts — so a package may rely on anything
-# built in a lower batch (this is the job Copr did with --after-build-id /
-# --with-build-id). Packages inside one batch must therefore never depend on
-# each other.
+# copr-build.yml submits the waves sequentially and waits for each wave's
+# Copr builds before the next — each successful build is immediately visible
+# to the project repo, so a package may rely on anything built in a lower
+# batch. Packages inside one batch must therefore never depend on each other.
 #
-# Build-time dependencies that Fedora 44 does not provide are packaged in
-# THIS repo (glaze, hyprwire, hyprtoolkit — ports of the lionheartp/Hyprland
-# Copr specs; the fourth Copr input, wlroots, ships in Fedora 44 itself and
-# is used straight from there). The Copr remains in the mock config only
-# as a lowest-priority bootstrap for fresh checkouts; once a wave publishes,
-# our own repo (priority 10) wins the same-named packages.
+# Build-time dependencies that Fedora 44 does not provide: glaze, hyprwire
+# and hyprtoolkit are packaged in THIS repo (ports of the lionheartp/Hyprland
+# Copr specs; the fourth input, wlroots, ships in Fedora 44 itself). The
+# lionheartp Copr stays configured on the Copr chroot only as a lowest-
+# priority bootstrap for fresh projects; once our own builds exist, the
+# project repo wins. Terra 44 is also configured there (anda-srpm-macros for
+# the rust specs). See notes/copr-setup.md.
+#
+# The optional [pkg.updates] table drives the daily sweep (update.yml):
+#   feed = "github-release"  + repo = "owner/name"   latest GitHub release tag
+#   feed = "github-tag"      + repo = "owner/name"   newest git tag
+#   feed = "custom"          + custom = "<name>"     ci/sweep/custom.py function
+# Packages without it (texlive-texmf) are never swept.
 #
 # batch 0  roots: Fedora-only build deps (plus the wrapper/binary packages)
 # batch 1  first level: everything that links against batch 0
 # batch 2  hyprland, hyprtoolkit — links against batch 0 and batch 1
 # batch 3  the hyprtoolkit dependents (guiutils/pwcenter/shutdown)
-# batch 4  texlive-texmf, its own wave
+# batch 4  texlive-texmf + onlyoffice — the heavy wave
 
 # --------------------------------------------------------------- desktops
 
@@ -30,51 +36,107 @@
 [hyprutils]
 batch = 0
 
+[hyprutils.updates]
+feed = "github-release"
+repo = "hyprwm/hyprutils"
+
 [hyprlang]
 batch = 0
+
+[hyprlang.updates]
+feed = "github-release"
+repo = "hyprwm/hyprlang"
 
 [hyprwayland-scanner]
 batch = 0
 
+[hyprwayland-scanner.updates]
+feed = "github-release"
+repo = "hyprwm/hyprwayland-scanner"
+
 [hyprland-protocols]
 batch = 0
+
+[hyprland-protocols.updates]
+feed = "github-release"
+repo = "hyprwm/hyprland-protocols"
 
 # glaze: header-only JSON library (provides glaze-static/glaze-devel for
 # hyprland and hyprshutdown). Ported from LionHeartP/hyprlandRPM.
 [glaze]
 batch = 0
 
+[glaze.updates]
+feed = "github-release"
+repo = "stephenberry/glaze"
+
 # --- batch 1 ------------------------------------------------------------
 # hyprland-qt-support needs hyprlang, so it cannot share hyprlang's batch.
 [hyprland-qt-support]
 batch = 1
 
+[hyprland-qt-support.updates]
+feed = "github-release"
+repo = "hyprwm/hyprland-qt-support"
+
 [aquamarine]
 batch = 1
+
+[aquamarine.updates]
+feed = "github-release"
+repo = "hyprwm/aquamarine"
 
 [hyprcursor]
 batch = 1
 
+[hyprcursor.updates]
+feed = "github-release"
+repo = "hyprwm/hyprcursor"
+
 [hyprgraphics]
 batch = 1
+
+[hyprgraphics.updates]
+feed = "github-release"
+repo = "hyprwm/hyprgraphics"
 
 # hyprwire: hyprland's wire-protocol IPC library (needs hyprutils).
 [hyprwire]
 batch = 1
 
-# the greeter is standalone (all build deps are Fedora 44; wlroots ships in
-# Fedora proper), but it builds one wave after noctalia by design so the
-# shell is always published first
+[hyprwire.updates]
+feed = "github-release"
+repo = "hyprwm/hyprwire"
+
+# noctalia: the desktop shell itself, release-tracked (upstream keeps no
+# stable branch; releases are cut from main). Recipe from Terra's
+# noctalia-nightly. The greeter is standalone (all build deps are Fedora 44;
+# wlroots ships in Fedora proper) and builds from the branch tip like hyprland
+[noctalia]
+batch = 0
+
 [noctalia-greeter-git]
 batch = 1
 
+[noctalia-greeter-git.updates]
+feed = "custom"
+custom = "noctalia-greeter-git"
+
 [xdg-desktop-portal-hyprland]
 batch = 1
+
+[xdg-desktop-portal-hyprland.updates]
+feed = "custom"
+custom = "xdg-desktop-portal-hyprland"
 
 # pyprland: Hyprland companion daemon (hatchling wheel + compiled C client,
 # per the AUR PKGBUILD); version sweeps the git tags.
 [pyprland]
 batch = 0
+
+[pyprland.updates]
+feed = "github-tag"
+repo = "hyprland-community/pyprland"
 
 # --- batch 2 ------------------------------------------------------------
 # hyprland: git snapshot (main-branch pin), the ~15-minute one. Needs
@@ -82,10 +144,18 @@ batch = 0
 [hyprland]
 batch = 2
 
+[hyprland.updates]
+feed = "custom"
+custom = "hyprland"
+
 # hyprtoolkit: the GUI toolkit for guiutils/pwcenter/shutdown (needs
 # aquamarine + hyprgraphics from batch 1).
 [hyprtoolkit]
 batch = 2
+
+[hyprtoolkit.updates]
+feed = "github-release"
+repo = "hyprwm/hyprtoolkit"
 
 # --- batch 3 ------------------------------------------------------------
 # the hyprtoolkit dependents: hyprtoolkit is batch 2, these must wait for
@@ -93,11 +163,23 @@ batch = 2
 [hyprland-guiutils]
 batch = 3
 
+[hyprland-guiutils.updates]
+feed = "github-release"
+repo = "hyprwm/hyprland-guiutils"
+
 [hyprpwcenter]
 batch = 3
 
+[hyprpwcenter.updates]
+feed = "github-release"
+repo = "hyprwm/hyprpwcenter"
+
 [hyprshutdown]
 batch = 3
+
+[hyprshutdown.updates]
+feed = "github-release"
+repo = "hyprwm/hyprshutdown"
 
 # ------------------------------------------------------------------- apps
 # bun tracks terrapkg's spec: the -baseline build of bun's release zip
@@ -105,41 +187,87 @@ batch = 3
 [bun]
 batch = 0
 
+[bun.updates]
+feed = "custom"
+custom = "bun"
+
 # tealdeer: official musl binary + release-published completion files.
 [tealdeer]
 batch = 0
+
+[tealdeer.updates]
+feed = "github-release"
+repo = "dbrgn/tealdeer"
 
 # uv: official musl tarball (uv + uvx), completions generated at build time.
 [uv]
 batch = 0
 
+[uv.updates]
+feed = "github-release"
+repo = "astral-sh/uv"
+
 # atuin: official gnu tarball.
 [atuin]
 batch = 0
+
+[atuin.updates]
+feed = "github-release"
+repo = "atuinsh/atuin"
 
 # bat: official gnu tarball (man page + completions included).
 [bat]
 batch = 0
 
+[bat.updates]
+feed = "github-release"
+repo = "sharkdp/bat"
+
 # eza: official gnu tarball + separate man/completions tarballs.
 [eza]
 batch = 0
+
+[eza.updates]
+feed = "github-release"
+repo = "eza-community/eza"
 
 # gnuplot: source build from the official SourceForge tarball (lean
 # console/cairo configuration). Version sweeps SourceForge best_release.
 [gnuplot]
 batch = 0
 
+[gnuplot.updates]
+feed = "custom"
+custom = "gnuplot"
+
+# kitty: GPU terminal, source build adapted from LionHeartP/hyprlandRPM's
+# spec (online Go modules for kitten, in-repo appdata, pinned nerd font,
+# sphinx man pages). Subpackages: terminfo, shell-integration, kitten.
+[kitty]
+batch = 0
+
+[kitty.updates]
+feed = "github-release"
+repo = "kovidgoyal/kitty"
+
 # cava: source build from the upstream release tarball (autotools, all
 # Fedora-available audio backends enabled).
 [cava]
 batch = 0
+
+[cava.updates]
+feed = "github-release"
+repo = "karlstav/cava"
 
 # pixi: official musl binary + completions generated at build time. (A
 # source-build attempt was reverted — it hung in CI and costs 1-2h on
 # runners; Terra builds it from source with %cargo_prep_online.)
 [pixi]
 batch = 0
+
+[pixi.updates]
+feed = "github-release"
+repo = "prefix-dev/pixi"
 
 # zotero follows terrapkg's spec (install layout, desktop file, icons,
 # appstream) over the OFFICIAL prebuilt tarball — the npm source build is
@@ -148,10 +276,47 @@ batch = 0
 [zotero]
 batch = 0
 
+[zotero.updates]
+feed = "github-tag"
+repo = "zotero/zotero"
+
 # xwiimote-ng is wired in but has never been through a validated build —
 # its first Copr build is the validation. Watch the first run.
 [xwiimote-ng]
 batch = 0
+
+# zoxide / fd-find / cliphist: rust source builds (cliphist builds from the
+# tag tarball — it does not publish to crates.io). zoxide and fd-find shadow
+# older Fedora versions; cliphist matches Fedora's 0.7.0 and wins on priority.
+[zoxide]
+batch = 0
+
+[zoxide.updates]
+feed = "github-release"
+repo = "ajeetdsouza/zoxide"
+
+[fd-find]
+batch = 0
+
+[fd-find.updates]
+feed = "github-release"
+repo = "sharkdp/fd"
+
+[cliphist]
+batch = 0
+
+[cliphist.updates]
+feed = "github-release"
+repo = "sentriz/cliphist"
+
+[noctalia.updates]
+feed = "github-release"
+repo = "noctalia-dev/noctalia"
+
+
+[xwiimote-ng.updates]
+feed = "github-tag"
+repo = "dev-0x7C6/xwiimote-ng"
 
 # ticktick follows the AUR PKGBUILD (vendor .deb payload, launcher, SUID
 # sandbox). TickTick publishes no first-party version feed, so the version
@@ -160,12 +325,20 @@ batch = 0
 [ticktick]
 batch = 0
 
+[ticktick.updates]
+feed = "custom"
+custom = "ticktick"
+
 # bitwarden: rewrap of the vendor RPM following
 # github.com/anudeepd/bitwarden-fedora-copr-ci (byte-identical payload, brp
 # hooks unset, per-version GPL text, curated AppStream metainfo). Version
 # sweeps the desktop-v releases of bitwarden/clients.
 [bitwarden]
 batch = 0
+
+[bitwarden.updates]
+feed = "custom"
+custom = "bitwarden"
 
 # obsidian: follows the Arch Linux package (launcher with user-flags file,
 # /usr/lib/obsidian, resources icon, LicenseRef-Obsidian), with the bundled
@@ -174,11 +347,19 @@ batch = 0
 [obsidian]
 batch = 0
 
+[obsidian.updates]
+feed = "custom"
+custom = "obsidian"
+
 # ------------------------------------------------------------------- apps
 # distroshelf: GNOME container manager, meson+cargo per upstream's meson.build
 # (crates fetched during the build — the project runs --enable-net on).
 [distroshelf]
 batch = 0
+
+[distroshelf.updates]
+feed = "github-release"
+repo = "ranfdev/DistroShelf"
 
 # ------------------------------------------------------------------ tools
 # chafa follows terrapkg's spec (upstream git-tag source build); Fedora
@@ -186,38 +367,78 @@ batch = 0
 [chafa]
 batch = 0
 
+[chafa.updates]
+feed = "github-release"
+repo = "hpjansson/chafa"
+
 [dust]
 batch = 0
+
+[dust.updates]
+feed = "github-release"
+repo = "bootandy/dust"
 
 [lazygit]
 batch = 0
 
+[lazygit.updates]
+feed = "github-release"
+repo = "jesseduffield/lazygit"
+
 [pandoc]
 batch = 0
+
+[pandoc.updates]
+feed = "github-release"
+repo = "jgm/pandoc"
 
 [starship]
 batch = 0
 
+[starship.updates]
+feed = "github-release"
+repo = "starship/starship"
+
 [yazi]
 batch = 0
 
+[yazi.updates]
+feed = "github-release"
+repo = "sxyazi/yazi"
+
 [zellij]
 batch = 0
+
+[zellij.updates]
+feed = "github-release"
+repo = "zellij-org/zellij"
 
 # opencode: terminal AI coding agent, repackaged from the current release
 # tarball.
 [opencode]
 batch = 0
 
+[opencode.updates]
+feed = "custom"
+custom = "opencode"
+
 # marksman: Markdown LSP server, wrapper over the upstream self-contained
 # .NET release binary (no crates.io publish, not in Fedora).
 [marksman]
 batch = 0
 
+[marksman.updates]
+feed = "custom"
+custom = "marksman"
+
 # texlab: LaTeX LSP server, Rust source build from the release tag tarball
 # (the crates.io texlab is stale upstream; yazi pattern).
 [texlab]
 batch = 0
+
+[texlab.updates]
+feed = "github-release"
+repo = "latex-lsp/texlab"
 
 # ------------------------------------------------------------ hyprland-adjacent
 # nwg-look and qt6ct follow LionHeartP/hyprlandRPM (the Hyprland ecosystem
@@ -226,18 +447,150 @@ batch = 0
 [nwg-look]
 batch = 0
 
+[nwg-look.updates]
+feed = "github-release"
+repo = "nwg-piotr/nwg-look"
+
 [qt6ct]
 batch = 0
 
-# texlive-texmf + onlyoffice-desktopeditors: the R2 wave. texlive is the
-# Arch-style grouped split — ONE source spec whose subpackages are the
-# collection groups of the scheme, generated from the dated tlnet-archive
-# snapshot by tools/texlive-splitter. Regeneration is a maintainer step (a
-# new snapshot = new %files lists), not a sweep. onlyoffice is a 363 MB
-# vendor-RPM rewrap that would take a third of the Pages budget, so it
-# shares this wave's R2 publish.
-[texlive-texmf]
-batch = 4
+[qt6ct.updates]
+feed = "custom"
+custom = "qt6ct"
 
+# texlive: the Arch-style group split, rolled biweekly — 40 generated specs
+# (39 collection groups + texlive-meta) owned by the texlive roll workflow
+# (.github/workflows/texlive-update.yml -> tools/texlive-splitter/roll.py),
+# no updates tables (the Monday sweep never touches them). onlyoffice is the
+# other heavy wave item, a 363 MB vendor-RPM rewrap.
 [onlyoffice-desktopeditors]
 batch = 4
+
+[onlyoffice-desktopeditors.updates]
+feed = "github-release"
+repo = "ONLYOFFICE/DesktopEditors"
+
+# texlive rolling groups (batch 5): generated specs owned by the
+# biweekly texlive roll (.github/workflows/texlive-update.yml);
+# never swept by the Monday update.yml — no updates tables, the
+# roll rewrites the specs wholesale.
+
+[texlive-basic]
+batch = 5
+
+[texlive-bibtexextra]
+batch = 5
+
+[texlive-binextra]
+batch = 5
+
+[texlive-context]
+batch = 5
+
+[texlive-fontsextra]
+batch = 5
+
+[texlive-fontsrecommended]
+batch = 5
+
+[texlive-fontutils]
+batch = 5
+
+[texlive-formatsextra]
+batch = 5
+
+[texlive-games]
+batch = 5
+
+[texlive-humanities]
+batch = 5
+
+[texlive-langarabic]
+batch = 5
+
+[texlive-langchinese]
+batch = 5
+
+[texlive-langcjk]
+batch = 5
+
+[texlive-langcyrillic]
+batch = 5
+
+[texlive-langczechslovak]
+batch = 5
+
+[texlive-langenglish]
+batch = 5
+
+[texlive-langeuropean]
+batch = 5
+
+[texlive-langfrench]
+batch = 5
+
+[texlive-langgerman]
+batch = 5
+
+[texlive-langgreek]
+batch = 5
+
+[texlive-langitalian]
+batch = 5
+
+[texlive-langjapanese]
+batch = 5
+
+[texlive-langkorean]
+batch = 5
+
+[texlive-langother]
+batch = 5
+
+[texlive-langpolish]
+batch = 5
+
+[texlive-langportuguese]
+batch = 5
+
+[texlive-langspanish]
+batch = 5
+
+[texlive-latex]
+batch = 5
+
+[texlive-latexextra]
+batch = 5
+
+[texlive-latexrecommended]
+batch = 5
+
+[texlive-luatex]
+batch = 5
+
+[texlive-mathscience]
+batch = 5
+
+[texlive-metapost]
+batch = 5
+
+[texlive-music]
+batch = 5
+
+[texlive-pictures]
+batch = 5
+
+[texlive-plaingeneric]
+batch = 5
+
+[texlive-pstricks]
+batch = 5
+
+[texlive-publishers]
+batch = 5
+
+[texlive-xetex]
+batch = 5
+
+[texlive-meta]
+batch = 5

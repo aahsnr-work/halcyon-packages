@@ -1,5 +1,12 @@
 # halcyon-packages — A-to-Z setup guide
 
+> **⚠ SUPERSEDED (2026-09-25)** — this document describes the retired
+> anda/mock/Pages build system. The project builds on **Fedora Copr** now;
+> the current from-zero recipe lives in `README.md` ("Recreating this
+> repository from scratch" + "Copr project & day-to-day"). The package tree
+> was renamed `pkgs/` (it was `anda/` in this document). The remaining
+> stages below are kept as historical reference only.
+
 This document is the complete recipe for recreating **halcyon-packages** from
 zero: a self-published **anda** monorepo that builds, signs and serves every
 non-Fedora RPM the halcyon image consumes, with automated upstream version

@@ -1,6 +1,6 @@
 Name:           <pkg>
-# rewritten by anda/<pkg>/update.rhai — rpm treats everything after the value on
-# a tag line as part of the value, so keep comments on their own line
+# rewritten by the daily sweep (ci/sweep) — rpm treats everything after the
+# value on a tag line as part of the value, so keep comments on their own line
 Version:        0.0.0
 Release:        1%{?dist}
 Summary:        <app> (packaged from the official upstream release)
@@ -12,8 +12,8 @@ BuildArch:      x86_64
 %description
 %{summary}.
 %prep
-# mock fetches the Source* URLs at SRPM-build time (anda enables network for
-# them); %prep only unpacks/uses what rpmbuild already downloaded. Use
+# the CI submit job fetches the Source* URLs with spectool at SRPM-build
+# time; %prep only unpacks/uses what rpmbuild already downloaded. Use
 # %setup -q -c -T -a 0 for archives rpmbuild can unpack; for anything else
 # read it from %{_sourcedir}.
 %setup -q -c -T
@@ -28,5 +28,5 @@ install -Dm0644 %{SOURCE1} %{buildroot}%{_datadir}/applications/<pkg>.desktop
 %{_bindir}/<pkg>
 %{_datadir}/applications/<pkg>.desktop
 %changelog
-* <date> halcyon-autobuild - 0.0.0-1
+* <date> halcyon-autoupdate - 0.0.0-1
 - packaged from the upstream release
