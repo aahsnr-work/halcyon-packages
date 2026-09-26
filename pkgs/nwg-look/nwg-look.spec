@@ -32,11 +32,12 @@ Requires:       xcur2png
 %description
 GTK3 settings editor adapted to work in the wlroots environment.
 
-prep-stage setup follows
+%prep
+%autosetup
 
 %build
 # modules are fetched from the Go proxy during the build (mock runs with
-# network on; nothing is vendored or downloaded in %prep)
+# network on; nothing is vendored or downloaded in prep)
 export GOFLAGS="-mod=mod"
 go build -o nwg-look .
 

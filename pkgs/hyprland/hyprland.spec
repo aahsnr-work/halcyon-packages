@@ -216,10 +216,6 @@ source /usr/lib/gcc-toolset/15-env.source
 %cmake_install
 install -Dpm644 %{SOURCE4} -t %{buildroot}%{_rpmconfigdir}/macros.d
 
-# Move user unit file from lib64 to lib as per Fedora guidelines
-mkdir -p %{buildroot}%{_prefix}/lib/systemd/user
-mv %{buildroot}%{_libdir}/systemd/user/* %{buildroot}%{_prefix}/lib/systemd/user/
-
 %files
 %license LICENSE LICENSE-udis86 LICENSE-hyprland-protocols
 %{_bindir}/[Hh]yprland
