@@ -16,7 +16,7 @@ Version:        1.2.6
 Release:        1%{?dist}
 Summary:        More intuitive version of du
 
-License:        Apache-2.0
+License:        ((MIT OR Apache-2.0) AND Unicode-3.0) AND (Apache-2.0 OR MIT) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (MIT OR Apache-2.0) AND (Unlicense OR MIT) AND (Zlib OR Apache-2.0 OR MIT) AND Apache-2.0 AND BSD-2-Clause AND MIT
 URL:            https://crates.io/crates/du-dust
 # the crates.io download URL spelled out: mock fetches sources at
 # SRPM-build time, before any buildroot macro exists
@@ -30,13 +30,6 @@ BuildRequires:  sccache
 
 %global _description %{expand:
 A more intuitive version of du.}
-
-%description %{_description}
-
-%package
-Summary:        %{summary}
-# aggregate of every linked crate's license, as carried by LICENSE.dependencies
-License:        ((MIT OR Apache-2.0) AND Unicode-3.0) AND (Apache-2.0 OR MIT) AND (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT) AND (MIT OR Apache-2.0) AND (Unlicense OR MIT) AND (Zlib OR Apache-2.0 OR MIT) AND Apache-2.0 AND BSD-2-Clause AND MIT
 
 %description %{_description}
 

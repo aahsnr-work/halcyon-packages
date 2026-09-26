@@ -63,7 +63,9 @@ BuildRequires:  libappstream-glib
 BuildRequires:  ncurses
 BuildRequires:  wayland-devel
 BuildRequires:  simde-static
-BuildRequires:  shader-slang-devel
+# shader-slang-devel was tried and reverted: kitty 0.49.1 builds green
+# without it and the package exists in no Fedora 44/Terra repo — it would
+# fail DNF resolution on Copr
 # man pages (sphinx; kitty bundles its doc tooling apart from the theme, which
 # is swapped for the builtin classic in %prep)
 BuildRequires:  python3-sphinx

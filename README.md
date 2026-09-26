@@ -241,25 +241,87 @@ Copr's per-project key.
 
 ## Recreating this repository from scratch
 
-Recipe in strict order — **the `COPR_CLICONF` secret must exist before the
-first content push** (the push triggers the full Copr cascade, which cannot
-authenticate without it).
+Strict order — **the `COPR_CLICONF` secret must exist before the first
+content push** (the push triggers the full Copr cascade, which cannot
+authenticate without it). Prerequisites: a Fedora box or container with
+`dnf`, plus `git`, `gh` and `curl`.
 
-1. **Copr account** — any Fedora Account works (no sponsored-packager
-   status needed): create it at <https://accounts.fedoraproject.org/>, then
-   at <https://copr.fedorainfracloud.org/> use **OIDC login** (that is the
-   FAS login; `gssapi` is the Kerberos variant). First login asks for a
+1. **Copr account** — create a Fedora account at
+   <https://accounts.fedoraproject.org/>, then log in at
+   <https://copr.fedorainfracloud.org/> with **OIDC login** (that is the
+   FAS login; `gssapi` is the Kerberos variant). The first login asks for a
    ~6-month-old GitHub account as an anti-abuse check.
-2. **API token** — <https://copr.fedorainfracloud.org/api/>, save the
-   snippet to `~/.config/copr`. It expires after **180 days**; CI failures
-   with 401/403 at the copr-cli steps mean regenerate + re-set the secret.
-3. `gh secret set COPR_CLICONF --repo OWNER/NAME < ~/.config/copr`.
-4. Create the project + chroot repos (commands in the section below).
-5. Push the content. The push sets off, unattended: the CI image build, the
+2. **API token** — install copr-cli and store the token:
+
+   ```bash
+   sudo dnf install copr-cli
+   # log in at https://copr.fedorainfracloud.org/ then open
+   # https://copr.fedorainfracloud.org/api/ and copy the config snippet into:
+   mkdir -p ~/.config && $EDITOR ~/.config/copr
+   chmod 600 ~/.config/copr
+   copr-cli whoami          # must print your Copr login
+   ```
+
+   The token expires after **180 days** — 401/403 waves in copr-build.yml
+   mean regenerate at `/api/` and re-run step 3.
+3. **GitHub secret**:
+
+   ```bash
+   gh auth login
+   gh secret set COPR_CLICONF --repo OWNER/NAME < ~/.config/copr
+   ```
+
+4. **Create the Copr project + chroot repos**:
+
+   ```bash
+   copr-cli create halcyon \
+     --chroot fedora-44-x86_64 \
+     --appstream off \
+     --enable-net on \
+     --description "RPM repository for the halcyon image: hand-maintained Fedora 44 packages (hyprwm stack, CLI tools, the rolling texlive groups), built from github.com/OWNER/NAME." \
+     --instructions "Enable with: dnf copr enable OWNER/halcyon fedora-44
+   Then install, e.g.: sudo dnf install hyprland"
+
+   # build-time repos: Terra 44 (buildroot macros) + lionheartp/Hyprland
+   # (lowest-priority bootstrap only)
+   copr-cli edit-chroot halcyon/fedora-44-x86_64 --repos \
+     "https://repos.fyralabs.com/terra44 \
+      https://download.copr.fedorainfracloud.org/results/lionheartp/Hyprland/fedora-44-x86_64/"
+   ```
+
+5. **Push the content**:
+
+   ```bash
+   git remote add origin git@github.com:OWNER/NAME.git
+   git push -u origin main
+   ```
+
+   The push runs, unattended: the CI image build (builder-docker.yml), the
    validate job (which waits for the image), then the batch waves
-   0 → 4 submitted to Copr — batch 4 carrying texlive-texmf (~1 h) and the
-   363 MB onlyoffice rewrap, both served from the same project repo.
-6. Consumers: `dnf copr enable OWNER/halcyon fedora-44`.
+   0 → 3 submitted to Copr — batch 4 is intentionally empty — and wave 5
+   carrying the 40 texlive rolling groups. 52 of the packages get created
+   server-side by their first build.
+6. **Watch it land**:
+
+   ```bash
+   gh run watch             # or the Actions page
+   copr-cli monitor halcyon # per-package Copr states
+   ```
+
+7. **Consumers**:
+
+   ```bash
+   dnf copr enable OWNER/halcyon fedora-44
+   # or, to make everything here shadow Fedora/Terra:
+   sudo cp repo/halcyon.repo /etc/yum.repos.d/   # priority=1 + project GPG key
+   sudo dnf install hyprland texlive-meta        # texlive-meta = the whole scheme, no docs
+   ```
+
+8. **Re-enable the automation** — install the
+   [Renovate GitHub App](https://github.com/apps/renovate) once (the
+   checked-in `renovate.json` drives it); `update.yml` (sweep, Mondays
+   04:17 UTC), `texlive-update.yml` (biweekly Wednesday roll) and
+   `repoclosure.yml` (post-cascade + daily) run on their own.
 
 Two upstream constraints Copr enforces: builds are pruned (the newest build
 per package is kept, older ones expire after 14 days), and package content

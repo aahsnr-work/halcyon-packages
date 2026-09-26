@@ -24,12 +24,6 @@ BuildRequires:  sccache
 %description
 %{summary}.
 
-%package
-Summary:        %{summary}
-
-%description
-%{summary}.
-
 %files
 %license LICENSE-MIT LICENSE-APACHE
 %license LICENSE.dependencies

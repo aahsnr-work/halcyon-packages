@@ -26,12 +26,6 @@ BuildRequires:  sccache
 %description
 %{summary}.
 
-%package
-Summary:        %{summary}
-
-%description
-%{summary}.
-
 %files
 %license LICENSE
 %license LICENSE.dependencies
