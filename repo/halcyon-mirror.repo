@@ -1,0 +1,29 @@
+# halcyon Cloudflare R2 mirror — the same packages as the Copr repo, served
+# from a fast edge. The Copr download path terminates on S3 in us-east-1,
+# which is single-stream slow from many networks; this mirror rides
+# Cloudflare instead and is synced automatically by
+# .github/workflows/r2-mirror.yml after every copr-build cascade.
+#
+# Packages are bit-identical to Copr's and signed with the same project GPG
+# key (fetched from Copr below), so the mirror needs no trust of its own —
+# gpgcheck verifies every RPM.
+#
+# SETUP: replace the placeholder baseurl with the bucket's public base
+# (the R2_PUBLIC_BASE variable of the r2-mirror workflow — e.g.
+# https://pub-<id>.r2.dev or your own domain), then:
+#   install -Dm644 repo/halcyon-mirror.repo /etc/yum.repos.d/halcyon-mirror.repo
+#
+# Use this file INSTEAD of halcyon.repo (same priority=1; installing both
+# makes dnf pick whichever resolved last — keep one enabled).
+
+[halcyon-r2-mirror]
+name=halcyon (aahsnr-work) — Cloudflare R2 mirror — priority 1
+baseurl=https://pub-REPLACE_ME.r2.dev/fedora-$releasever-x86_64/
+type=rpm-md
+skip_if_unavailable=False
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/aahsnr-work/halcyon/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+priority=1

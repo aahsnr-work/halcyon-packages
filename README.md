@@ -9,6 +9,8 @@ version tracking.
 sudo dnf copr enable aahsnr-work/halcyon fedora-44
 # or, to shadow Fedora/Terra with everything built here (priority=1):
 sudo install -Dm644 repo/halcyon.repo /etc/yum.repos.d/halcyon.repo
+# slow route to Copr's S3-backed downloads? the R2 mirror rides Cloudflare:
+sudo install -Dm644 repo/halcyon-mirror.repo /etc/yum.repos.d/halcyon-mirror.repo
 ```
 
 Copr owns the build farm, GPG signing, and repo hosting. This repo carries
@@ -28,8 +30,9 @@ drive Copr.
 | `ci/sweep/` | the upstream version sweeper (`sweep.py`, feed logic in `feeds.py` / `custom.py`) |
 | `tools/texlive-splitter/` | the texlive roll: `roll.py` (driver), `splitter.py` (tlpdb parser), `emit_groups.py` (spec renderer) |
 | `.github/builder/` | the CI job image (fedora-minimal 44 + copr-cli, python3, rpm-build, rpmdevtools, mock) |
-| `.github/workflows/` | `copr-build.yml`, `update.yml`, `texlive-update.yml`, `repoclosure.yml`, `builder-docker.yml` |
+| `.github/workflows/` | `copr-build.yml`, `update.yml`, `texlive-update.yml`, `repoclosure.yml`, `r2-mirror.yml`, `builder-docker.yml` |
 | `repo/halcyon.repo` | the consumer drop-in (priority=1 + project GPG key) |
+| `repo/halcyon-mirror.repo` | consumer drop-in for the R2 mirror (same packages, Cloudflare edge; set up via `r2-mirror.yml`'s header) |
 | `templates/` | starting points for new specs |
 
 ## How a build works
