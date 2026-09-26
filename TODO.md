@@ -15,3 +15,5 @@
   6.  antigravity-cli
   7.  kilo cli
   8.  zcode desktop
+  9.  ferdium
+  10. nwg-display
