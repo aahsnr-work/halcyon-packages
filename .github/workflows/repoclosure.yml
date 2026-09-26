@@ -37,7 +37,7 @@ jobs:
     # cascade (a failed one did not publish anything new)
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     container:
       image: registry.fedoraproject.org/fedora:44
     steps:
@@ -67,15 +67,32 @@ jobs:
           gpgkey=https://download.copr.fedorainfracloud.org/results/lionheartp/Hyprland/pubkey.gpg
           enabled=1
           EOF
-      - name: Repoclosure (newest)
+      # A cascade makes each successful build visible to the repo the moment
+      # it lands, and two cascades can overlap (a quick batch-0 push finishing
+      # while the texlive roll's wave 5 is still publishing) — a check that
+      # samples the repo mid-publish sees stale-vs-new version skew. Retry
+      # with a wait instead of failing on the window.
+      - name: Repoclosure (newest, then newest+best)
         run: |
-          set -eu
-          dnf -q repoclosure \
-            --check copr:copr.fedorainfracloud.org:aahsnr-work:halcyon \
-            --newest
-      - name: Repoclosure (newest + best)
-        run: |
-          set -eu
-          dnf -q repoclosure \
-            --check copr:copr.fedorainfracloud.org:aahsnr-work:halcyon \
-            --newest --best
+          set -u
+          attempt=0; max=3
+          while :; do
+            attempt=$((attempt+1))
+            echo "::group::repoclosure attempt $attempt"
+            if dnf -q repoclosure \
+                 --check copr:copr.fedorainfracloud.org:aahsnr-work:halcyon \
+                 --newest \
+              && dnf -q repoclosure \
+                 --check copr:copr.fedorainfracloud.org:aahsnr-work:halcyon \
+                 --newest --best; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            if [ "$attempt" -ge "$max" ]; then
+              echo "repoclosure still failing after $attempt attempts"
+              exit 1
+            fi
+            echo "attempt $attempt failed — waiting 10 min for a possibly in-flight cascade to finish publishing, then retrying"
+            sleep 600
+          done

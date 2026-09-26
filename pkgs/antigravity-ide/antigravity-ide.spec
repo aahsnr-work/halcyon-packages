@@ -54,13 +54,13 @@ Requires:       libsecret
 Requires:       libsoup3
 Requires:       libX11
 Requires:       libxcb
-Requires:       libxcomposite
+Requires:       libXcomposite
 Requires:       libXdamage
-Requires:       libxext
-Requires:       libxfixes
+Requires:       libXext
+Requires:       libXfixes
 Requires:       libxkbcommon
 Requires:       libxkbfile
-Requires:       libxrandr
+Requires:       libXrandr
 Requires:       libuuid
 Requires:       mesa-libGL
 Requires:       nspr
@@ -76,6 +76,11 @@ Requires:       webkit2gtk4.1
 %global __brp_strip %{nil}
 %global __brp_strip_comment_note %{nil}
 %global __brp_mangle_shebangs %{nil}
+# the microsoft-authentication extension's libmsalruntime.so needs an
+# OpenSSL-flavoured libcurl symbol version Fedora does not define (Arch's
+# curl does, hence the AUR's curl dep) — no package can satisfy it and it
+# is only dlopened for Microsoft sign-in, so exclude the require
+%global __requires_exclude ^libcurl[.]so[.]4[(]
 
 %description
 An agentic development platform from Google, evolving the IDE into the
