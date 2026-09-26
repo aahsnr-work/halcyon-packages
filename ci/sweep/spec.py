@@ -69,21 +69,6 @@ class SpecFile:
         self.text = text
         return True
 
-    def set_version_base(self, base: str) -> None:
-        """Rewrite only the leading numeric run of the Version value, leaving
-        any macro-composed suffix (hyprland's %{?bumpver:...}) intact — the
-        hyprland rhai's `sub((?m)^(Version:[ \t]*)[0-9.]+, ...)`."""
-        if not re.fullmatch(r"[0-9.]+", base):
-            raise SpecError(f"set_version_base: {base!r} is not [0-9.]+")
-        self.text, n = re.subn(
-            r"(?m)^(Version:[ \t]*)[0-9.]+",
-            lambda m: m.group(1) + base,
-            self.text,
-            count=1,
-        )
-        if n != 1:
-            raise SpecError(f"{self.path}: no Version: line")
-
     def set_snapshot_version(self, base: str, counter: int | None) -> None:
         """noctalia-style Version rewrite: the whole value token becomes
         `<base>^<counter>.%{shortcommit}` (counter None = `^1` reset semantics

@@ -45,104 +45,6 @@ shell! ☄🌌️.}
 %doc README.md
 %{_bindir}/starship
 
-%package        devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description    devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "%{crate}" crate.
-
-%files          devel
-%license %{crate_instdir}/LICENSE
-%doc %{crate_instdir}/README.md
-%{crate_instdir}/
-
-%package     -n %{name}+default-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+default-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "default" feature of the "%{crate}" crate.
-
-%files       -n %{name}+default-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+battery-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+battery-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "battery" feature of the "%{crate}" crate.
-
-%files       -n %{name}+battery-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+config-schema-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+config-schema-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "config-schema" feature of the "%{crate}" crate.
-
-%files       -n %{name}+config-schema-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+notify-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+notify-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "notify" feature of the "%{crate}" crate.
-
-%files       -n %{name}+notify-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+notify-rust-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+notify-rust-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "notify-rust" feature of the "%{crate}" crate.
-
-%files       -n %{name}+notify-rust-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+schemars-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+schemars-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "schemars" feature of the "%{crate}" crate.
-
-%files       -n %{name}+schemars-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+starship-battery-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+starship-battery-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "starship-battery" feature of the "%{crate}" crate.
-
-%files       -n %{name}+starship-battery-devel
-%ghost %{crate_instdir}/Cargo.toml
-
 %prep
 %autosetup -n %{crate}-%{version} -p1
 cargo add log@=0.4.22
@@ -186,7 +88,6 @@ rm -f Cargo.toml.orig
 # cache dir on the workspace bind mount (see mock config) — survives across
 # builds and is shared by every rust source build
 export SCCACHE_DIR=/sccache
-%dnl %cargo_build
 # license reports (terra's cargo_license_*_online logic, inline): the
 # cargo-to-rpm license commands hardcode --offline, which breaks the
 # online build
@@ -199,6 +100,11 @@ export SCCACHE_DIR=/sccache
 %install
 export SCCACHE_DIR=/sccache
 %cargo_install -- --locked
+# the crate is a lib+bin crate, so cargo_install copies the crate
+# source into the cargo registry for a -devel subpackage; the devel
+# subpackages are dropped here (plain package names, bin-only), so
+# the registry copy goes with them
+rm -rf %{buildroot}%{_datadir}/cargo/registry/%{crate}-%{version}
 
 %if %{with check}
 %check

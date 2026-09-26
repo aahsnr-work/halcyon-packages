@@ -31,26 +31,26 @@ itself, so unchecked items carry their open work inline.
 ### desktops — the Hyprland stack, its portals and the noctalia shell — the image's desktop layer
 
 - [x] **aquamarine** (batch 1) — 0.15.1 — source build (hyprwm)
-- [x] **hyprcursor** (batch 1) — 0.1.13 — source build (hyprwm)
+- [x] **hyprcursor** (batch 2) — 0.1.13 — source build (hyprwm)
 - [x] **hyprgraphics** (batch 1) — 0.5.1 — source build (hyprwm)
 
 # TODO
 
 ---
 
-- [x] **hyprland** (batch 2) — 0.56.2^58.git<sha> — source build; tracks the
+- [x] **hyprland** (batch 3) — 0.56.2^58.git<sha> — source build; tracks the
   newest upstream `vX.Y.Z-b` bugfix branch (upstream keeps no `stable`
   branch; the sweeper resolves the branch and pins its tip — task 2 note)
 
 ---
 
-- [x] **hyprland-guiutils** (batch 1) — 0.2.2 — source build (hyprwm)
+- [x] **hyprland-guiutils** (batch 3) — 0.2.2 — source build (hyprwm)
 - [x] **hyprland-protocols** (batch 0) — 0.7.1 — source build (hyprwm, cmake since v0.7.1); **validated build green (2026-09-24, anda era)**
-- [x] **hyprland-qt-support** (batch 1) — 0.1.0 — source build (hyprwm)
-- [x] **hyprlang** (batch 0) — 0.6.8 — source build (hyprwm)
+- [x] **hyprland-qt-support** (batch 2) — 0.1.0 — source build (hyprwm)
+- [x] **hyprlang** (batch 1) — 0.6.8 — source build (hyprwm)
 - [x] **hyprtoolkit** (batch 2) — 0.6.0 — source build (hyprwm; links the in-repo stack)
-- [x] **hyprpwcenter** (batch 1) — 0.1.2 — source build (hyprwm)
-- [x] **hyprshutdown** (batch 1) — 0.1.1 — source build (hyprwm)
+- [x] **hyprpwcenter** (batch 3) — 0.1.2 — source build (hyprwm)
+- [x] **hyprshutdown** (batch 3) — 0.1.1 — source build (hyprwm)
 - [x] **hyprutils** (batch 0) — 0.14.2 — source build (hyprwm); **validated build green (2026-09-24, anda era)**
 - [x] **hyprwayland-scanner** (batch 0) — 0.4.6 — source build (hyprwm)
 
@@ -58,16 +58,16 @@ itself, so unchecked items carry their open work inline.
 
 ---
 
-- [x] **noctalia** (batch 0) — 5.1.0 — source build, release-tracked
+- [x] **noctalia** (batch 3) — 5.1.0 — source build, release-tracked
   (upstream keeps no stable branch; latest release = stable). v5 is the
   C++/meson shell — no quickshell dependency (that was v4; Terra's
   noctalia-nightly spec is the recipe).
 
 ---
 
-- [x] **noctalia-greeter-git** (batch 0) — 1.5.0^8.git<sha> — source build (main-branch pin)
+- [x] **noctalia-greeter-git** (batch 1) — 1.5.0^8.git<sha> — source build (main-branch pin)
 - [x] **pyprland** (batch 0) — 3.4.4 — source build (hatchling wheel + compiled C client, AUR PKGBUILD)
-- [x] **xdg-desktop-portal-hyprland** (batch 1) — 1.4.1 — source build (hyprwm)
+- [x] **xdg-desktop-portal-hyprland** (batch 2) — 1.4.1 — source build (hyprwm)
 
 - [x] **kitty** (batch 0) — 0.49.1 — source build (GPU terminal; LHP recipe
   adapted: online Go modules for kitten, in-repo appdata, pinned nerd font,
@@ -208,7 +208,7 @@ validation.
   header documents exactly how to restore the full source build.
 - **Sweep verification — done differently (2026-09-25)**: the 48
   `update.rhai` scripts were ported to `ci/sweep/` (Python) and proven
-  equivalent with `ci/sweep/verify.py` — 42/46 byte-identical against real
+  equivalent with the `anda update` harness — 42/46 byte-identical against real
   `anda update` runs, 3 REVIEW (the rhai scripts crashed before writing:
   hyprland undefined `old_tag`, obsidian `#` comments, and the third
   latent breakage: the rhai fed raw v-prefixed tags where the specs need

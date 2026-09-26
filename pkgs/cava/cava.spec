@@ -46,5 +46,5 @@ output directly.
 %{_datadir}/consolefonts/cava.psf
 
 %changelog
-* Fri Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 1.0.0-1
+* Sat Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 1.0.0-1
 - changelog retro-added (the spec predates the written-changelog rule)

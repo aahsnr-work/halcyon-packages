@@ -14,7 +14,6 @@ License:        GPL-3.0-or-later
 URL:            https://github.com/ranfdev/DistroShelf
 Source0:        %{url}/archive/refs/tags/v%{version}/DistroShelf-%{version}.tar.gz
 Source1:        distroshelf-helper.sh
-BuildArch:      x86_64
 
 BuildRequires:  meson
 BuildRequires:  gcc
@@ -63,4 +62,4 @@ install -Dm0755 %{SOURCE1} %{buildroot}%{_bindir}/distroshelf-helper
 
 %changelog
 * Wed Sep 23 2026 halcyon-autobump <aahsnr041@proton.me>
-- converted to an explicit Release and changelog for the anda build
+- converted to an explicit Release and changelog for the Copr build

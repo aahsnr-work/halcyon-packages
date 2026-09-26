@@ -6,15 +6,16 @@
 #     zotero-download.s3.amazonaws.com/ci/... which are gone (403) for the
 #     current tags — the npm build cannot complete reliably for anyone, let
 #     alone unattended. The official tarball is the output of the same
-#     dir_build and carries zotero.desktop + the icons, so every %install and
-#     %files line below is upstream's, just pointing at the unpacked tarball.
+#     dir_build and carries zotero.desktop + the icons, so every install and
+#     files line below is upstream's, just pointing at the unpacked tarball.
 #   * terra-appstream-helper / terra_appstream / desktop_file_install are
 #     Terra-build-env macros — replaced with the plain Fedora equivalents
-#     (marked inline). %_hicolordir / %_appsdir are defined below so the
-#     upstream %install and %files lines stay untouched.
-#   * %doc README.md / CONTRIBUTING.md and %license COPYING dropped: the
+#     (marked inline). The hicolordir / appsdir helpers are defined below so the
+#     upstream install and files lines stay untouched.
+#   * doc README.md / CONTRIBUTING.md and license COPYING dropped: the
 #     official tarball ships neither.
 %global debug_package %{nil}
+%global _build_id_links none
 %global appid org.zotero.Zotero
 %global bundledir %{_libdir}/zotero
 %global _hicolordir %{_datadir}/icons/hicolor

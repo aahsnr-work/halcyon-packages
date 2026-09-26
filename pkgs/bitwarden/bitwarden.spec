@@ -1,5 +1,5 @@
 # Ported from github.com/anudeepd/bitwarden-fedora-copr-ci (specs/bitwarden.spec)
-# on 2026-09-22 and adapted to this repo's anda pipeline: Source0/1 are
+# on 2026-09-22 and adapted to this repo's pipeline: Source0/1 are
 # fetched by mock at SRPM-build time, Source2 is a repo file, and nothing is
 # downloaded in %prep. The release-NVR/force_build commentary of the upstream
 # CI repo does not apply here (the sweep bumps Version and every publish
@@ -8,6 +8,7 @@
 # Prebuilt foreign binary: no build-id or debuginfo can be produced, so the
 # debug package is disabled. The binary ships as-is from the release RPM.
 %global debug_package %{nil}
+%global _build_id_links none
 
 # NOTE (verified by local rpmbuild of 2026.8.0): %%global debug_package %%{nil}
 # is what makes the default ELF-rewriting brp hooks run, not what skips them

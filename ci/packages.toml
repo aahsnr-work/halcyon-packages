@@ -192,7 +192,7 @@ batch = 0
 feed = "custom"
 custom = "bun"
 
-# tealdeer: official musl binary + release-published completion files.
+# tealdeer: Rust source build (crates.io) + completions generated at build time.
 [tealdeer]
 batch = 0
 
@@ -208,7 +208,7 @@ batch = 0
 feed = "github-release"
 repo = "astral-sh/uv"
 
-# atuin: official gnu tarball.
+# atuin: Rust source build (crates.io).
 [atuin]
 batch = 0
 
@@ -216,7 +216,7 @@ batch = 0
 feed = "github-release"
 repo = "atuinsh/atuin"
 
-# bat: official gnu tarball (man page + completions included).
+# bat: Rust source build (crates.io); binary only.
 [bat]
 batch = 0
 
@@ -224,7 +224,7 @@ batch = 0
 feed = "github-release"
 repo = "sharkdp/bat"
 
-# eza: official gnu tarball + separate man/completions tarballs.
+# eza: Rust source build (crates.io); binary only.
 [eza]
 batch = 0
 

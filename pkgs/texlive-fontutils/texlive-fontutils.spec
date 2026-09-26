@@ -17,7 +17,7 @@ Version:        20260925
 Release:        1%{?dist}
 Summary:        TeX Live fontutils collection — Graphics and font utilities
 BuildArch:      noarch
-License:        GPL+ and others (TeX Live collective licenses)
+License:        GPL-1.0-or-later AND BSD-3-Clause AND LPPL-1.3c AND MIT AND public-domain
 URL:            https://tug.org/texlive/
 
 %global _tl_archive_url https://texlive.info/tlnet-archive/2026/09/25/tlnet
@@ -71,8 +71,11 @@ for entry in raw/*; do
         *)                cp -a "$entry"   staging/texmf-dist/ ;;
     esac
 done
-# the tarballs bundle documentation and sources; neither is in this split
-rm -rf staging/texmf-dist/doc staging/texmf-dist/source
+# the tarballs bundle documentation; none ships (no docfiles are claimed).
+# texmf-dist/source/ STAYS: those files are runfiles in the tlpdb (koma-
+# script's are claimed), and install-tl's option_src only governed the
+# separate texmf-src tree — the old validated staging shipped them too.
+rm -rf staging/texmf-dist/doc
 
 %install
 mkdir -p "%{buildroot}%{_tl_texmf}"

@@ -20,7 +20,7 @@
 %global __brp_mangle_shebangs %{nil}
 # the vendor payload carries hard-coded upstream rpaths (/opt/qt/5.9.9/...);
 # check-rpaths hard-fails the build on them and the binaries are not ours to
-# fix (Copr's brp set runs stricter than the old anda buildroot, 2026-09-25)
+# fix (Copr's brp set runs stricter than the previous buildroot, 2026-09-25)
 %global __brp_check_rpaths %{nil}
 # rpm writes /usr/lib/.build-id symlinks for every ELF in the payload (compat
 # mode, with .1/.2/.3 dupes); with the debug package disabled nothing packages
@@ -85,9 +85,11 @@ rpm2cpio %{SOURCE0} | cpio -idmu
 %install
 cp -a opt %{buildroot}/
 cp -a usr %{buildroot}/
+# the vendor RPM was built with build-id links; nothing packages them
+rm -rf %{buildroot}/usr/lib/.build-id
 install -Dpm0644 %{SOURCE1} %{buildroot}%{_metainfodir}/org.onlyoffice.desktopeditors.metainfo.xml
-# The vendor desktop file opens documents with %U (URLs); editors expect
-# file paths — switch to %F per the long-standing upstream bug every
+# The vendor desktop file opens documents with the URL placeholder; editors expect
+# file paths — switch to the file placeholder per the long-standing upstream bug every
 # downstream repack patches
 sed -i 's/%%U$/%%F/' %{buildroot}%{_datadir}/applications/onlyoffice-desktopeditors.desktop
 
@@ -102,6 +104,9 @@ appstreamcli validate --no-net %{buildroot}%{_metainfodir}/org.onlyoffice.deskto
 %{_datadir}/applications/onlyoffice-desktopeditors.desktop
 %{_datadir}/icons/hicolor/*/apps/onlyoffice-desktopeditors.png
 %{_metainfodir}/org.onlyoffice.desktopeditors.metainfo.xml
+# the vendor payload ships its own docs and licenses — keep them
+%{_datadir}/doc/onlyoffice-desktopeditors/
+%license %{_datadir}/licenses/onlyoffice-desktopeditors/*
 
 %changelog
 * Fri Sep 25 2026 halcyon-autobump <aahsnr041@proton.me>

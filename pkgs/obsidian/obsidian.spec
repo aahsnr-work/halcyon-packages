@@ -15,6 +15,7 @@
 %global             full_name obsidian
 %global             digest none
 %global             debug_package %{nil}
+%global _build_id_links none
 %global             __os_install_post %{nil}
 
 Name:               obsidian
@@ -79,5 +80,5 @@ install -dm755 %{buildroot}%{_libdir}/obsidian
 %{_licensedir}/obsidian/LICENSE-Obsidian
 
 %changelog
-* Fri Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 1.13.7-1
+* Sat Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 1.13.7-1
 - changelog retro-added (the spec predates the written-changelog rule)

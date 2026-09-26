@@ -1,14 +1,15 @@
 # Ported from terrapkg/packages frawhide (anda/devs/bun) on 2026-09-22 and
 # adapted to this repo's Copr custom-source pipeline. Deviations from upstream:
 #   * anda-srpm-macros / terra-appstream-helper are Terra build-env packages —
-#     removed; %pkg_completion and %terra_appstream are Terra macros, replaced
+#     removed; terra's completion and appstream macros are Terra-only, replaced
 #     with the explicit Fedora equivalents (marked inline). The shell
-#     completion files land in the main package instead of %pkg_completion's
+#     completion files land in the main package instead of terra's
 #     generated subpackages.
-#   * The release zip is fetched by mock at SRPM-build time (anda enables
+#   * The release zip is fetched by mock at SRPM-build time (network is on in Copr and
 #     network for URL sources; %prep never downloads anything itself); the
 #     spec is otherwise upstream verbatim.
 %define debug_package %{nil}
+%global _build_id_links none
 %ifarch x86_64
 %global a x64-baseline
 %elifarch aarch64
@@ -32,7 +33,9 @@ Source1:		sh.oven.bun.metainfo.xml
 BuildRequires:	unzip
 
 %description
-%summary.
+Bun is an incredibly fast JavaScript runtime, bundler, test runner, and
+package manager all in one. This package packages the official x86_64
+release build with shell completions and the appstream metadata.
 
 %prep
 %autosetup -n bun-linux-%a
@@ -87,5 +90,5 @@ install -Dm644 %{SOURCE1} %{buildroot}%{_datadir}/metainfo/sh.oven.bun.metainfo.
 %{_datadir}/fish/vendor_completions.d/bun.fish
 
 %changelog
-* Fri Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 1.4.2-1
+* Sat Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 1.4.2-1
 - changelog retro-added (the spec predates the written-changelog rule)

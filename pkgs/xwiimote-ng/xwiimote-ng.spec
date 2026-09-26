@@ -48,4 +48,4 @@ install -Dpm0644 res/70-udev-xwiimote.rules \
 
 %changelog
 * Wed Sep 23 2026 halcyon-autobump <aahsnr041@proton.me>
-- converted to an explicit Release and changelog for the anda build
+- converted to an explicit Release and changelog for the Copr build

@@ -9,11 +9,16 @@ License:        MIT OR Apache-2.0
 URL:            https://docs.astral.sh/uv/
 #!RemoteAsset
 Source0:        https://github.com/astral-sh/uv/releases/download/%{version}/uv-x86_64-unknown-linux-musl.tar.gz
+#!RemoteAsset
+Source1:        https://raw.githubusercontent.com/astral-sh/uv/%{version}/LICENSE-APACHE
+#!RemoteAsset
+Source2:        https://raw.githubusercontent.com/astral-sh/uv/%{version}/LICENSE-MIT
 
 ExclusiveArch:  x86_64
 
 # prebuilt foreign binary: nothing to produce debug symbols from
 %define debug_package %{nil}
+%global _build_id_links none
 
 %description
 uv is an extremely fast Python package and project manager, written in Rust:
@@ -23,6 +28,9 @@ a drop-in replacement for pip/pip-tools/virtualenv/pipx and more.
 %autosetup -n uv-x86_64-unknown-linux-musl
 
 %install
+# vendor tarballs ship no license text; the repo LICENSE rides along
+install -Dpm0644 %{SOURCE1} %{buildroot}%{_licensedir}/%{name}/LICENSE-APACHE
+install -Dpm0644 %{SOURCE2} %{buildroot}%{_licensedir}/%{name}/LICENSE-MIT
 install -Dpm755 uv %{buildroot}%{_bindir}/uv
 install -Dpm755 uvx %{buildroot}%{_bindir}/uvx
 # completions come from the clap_complete flag on each binary — the
@@ -40,6 +48,8 @@ install -Dpm644 _uvx     %{buildroot}%{_datadir}/zsh/site-functions/_uvx
 install -Dpm644 uvx.fish %{buildroot}%{_datadir}/fish/vendor_completions.d/uvx.fish
 
 %files
+%license LICENSE-APACHE
+%license LICENSE-MIT
 %{_bindir}/uv
 %{_bindir}/uvx
 %{_datadir}/bash-completion/completions/uv

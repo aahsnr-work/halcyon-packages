@@ -24,7 +24,12 @@ on:
     workflows: [copr-build]
     types: [completed]
 
-permissions: {}
+permissions:
+  contents: read
+
+concurrency:
+  group: repoclosure
+  cancel-in-progress: true
 
 jobs:
   repoclosure:

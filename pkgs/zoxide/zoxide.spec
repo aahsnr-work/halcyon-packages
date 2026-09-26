@@ -1,6 +1,6 @@
 # Written for halcyon-packages (rust2rpm-style, bin crate).
 # Sources: the crates.io URL is spelled out — the CI submit job fetches it
-# with spectool at SRPM-build time; keep downloads out of %prep.
+# with spectool at SRPM-build time; keep downloads out of the prep stage.
 # Registration: ci/packages.toml (batch + [pkg.updates] feed).
 %undefine __brp_mangle_shebangs
 %define debug_package %{nil}
@@ -86,5 +86,5 @@ export SCCACHE_DIR=/sccache
 %endif
 
 %changelog
-* Fri Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 0.10.0-1
+* Sat Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 0.10.0-1
 - initial packaging (rust source build; shadows Fedora's 0.9.8)

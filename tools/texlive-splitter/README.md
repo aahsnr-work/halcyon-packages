@@ -1,34 +1,31 @@
-# TeX Live grouped-RPM splitter
+# TeX Live rolling per-group packager
 
-Converts a dated tlnet-archive snapshot into ONE `texlive-texmf` source
-package whose subpackages mirror Arch's grouping (texlive-basic,
-texlive-binextra, texlive-latexextra, texlive-fontsextra, texlive-lang*,
-texlive-doc, ...).
+Turns a tlnet-archive snapshot into **40 separate specs** — one per
+Arch-named collection group (`texlive-basic`, `texlive-latex`,
+`texlive-fontsextra`, ..., the `texlive-lang*` set) plus `texlive-meta`
+(the scheme-full catch-all) — living at `pkgs/texlive-<group>/`. Batch 5,
+owned by the biweekly roll (`.github/workflows/texlive-update.yml`).
 
-Wired into CI via `adapt-spec.py` (see the repo TODO.md): the generated
-spec's `%files` lists reference the local install staging tree, so adapt-spec.py
-rewrites the spec to stage the snapshot from the dated archive at %build time
-before it can build as an SRPM.
+Tools:
 
-Usage:
+- **splitter.py** — the parsing/partition library: `parse_tlpdb()` +
+  `partition(packages, scheme, docs=False)`. The partition claims every
+  texmf-dist file for exactly one group (topologically ordered
+  collections first, level-1 members before transitive reachers) and
+  tracks each group's member tarballs.
+- **emit_groups.py** — renders one spec per group + meta: `%build` wgets
+  the group's member tarballs from the dated snapshot
+  (`<snapshot>/tlnet/archive/<pkg>.tar.xz`), merges the relocatable
+  top-level dirs into one `texmf-dist` tree, prunes `doc/` (no
+  documentation ships) and generates the mktexlsr-format `ls-R` in
+  texlive-basic. Output is a pure function of the snapshot date.
+- **roll.py** — the driver: probe the newest daily snapshot (xz-magic
+  check; texlive.info fronts the archive with Anubis, which wants a
+  wget/curl-shaped User-Agent), fetch + decompress the tlpdb, render all
+  specs, write only byte-changed files, append missing registry entries.
+  Idempotent: a second run against the same snapshot writes nothing.
 
-    ./splitter.py --snapshot 20260901 \
-        [--archive-root https://texlive.info/tlnet-archive] [--out ./generated]
+Manual roll: `python3 tools/texlive-splitter/roll.py [--snapshot YYYYMMDD]`.
 
-Steps performed:
-
-1. install-tl --profile into a staging dir from the dated snapshot
-   (scheme-medium, docfiles installed; docs land in the texlive-doc subpackage)
-2. parse tlpkg/texlive.tlpdb -> collection blocks (runfiles, deps,
-   AddFormat/addMap/AddHyphen fragments)
-3. generate one spec, `./generated/texlive-texmf.spec`, with a
-   `%package -n texlive-<group>` subpackage per Arch-named group
-
-Not implemented (prints hints only):
-
-4. repackaging the staging tree into buildable sources + a mock/Copr build of
-   the whole set atomically (one snapshot for ALL groups)
-5. publishing into the Copr project + bumping consumers
-
-The Arch reference implementation: gitlab.archlinux.org/archlinux/packaging/
-packages/texlive-texmf (prepare() parsing + pacman hook fragments).
+The Arch reference: gitlab.archlinux.org/archlinux/packaging/packages/
+texlive-* (the group list and the collection→group mapping mirror it).

@@ -99,6 +99,6 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/dev.noctalia.Noctalia
 %{_datadir}/icons/hicolor/scalable/apps/noctalia.svg
 
 %changelog
-* Fri Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 5.1.0-1
+* Sat Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 5.1.0-1
 - initial packaging, release-tracked (v5.1.0); recipe from Terra's
   noctalia-nightly (terrapkg/packages)

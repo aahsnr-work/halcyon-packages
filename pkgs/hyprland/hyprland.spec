@@ -22,6 +22,9 @@ Source4:        macros.hyprland
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
 BuildRequires:  meson
+# CMakeLists pins glaze 7.2.0 via FetchContent when the buildroot's glaze
+# is newer, and FetchContent clones with git
+BuildRequires:  git-core
 BuildRequires:  muParser-devel
 BuildRequires:  glaze-static
 BuildRequires:  pkgconfig(aquamarine)
@@ -117,7 +120,7 @@ Recommends:     kitty
 Recommends:     wofi
 Recommends:     playerctl
 Recommends:     brightnessctl
-Recommends:     hyprland-qtutils
+Recommends:     hyprland-guiutils
 # Lack of graphical drivers may hurt the common use case
 Recommends:     mesa-dri-drivers
 # Logind needs polkit to create a graphical session

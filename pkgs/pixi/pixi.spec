@@ -6,6 +6,7 @@
 # layer mid-tree). The binary generates its own shell completions at build
 # time.
 %define debug_package %{nil}
+%global _build_id_links none
 Name:           pixi
 Version:        0.81.0
 Release:        2%{?dist}
@@ -16,6 +17,8 @@ License:        BSD-3-Clause
 URL:            https://pixi.sh
 #!RemoteAsset
 Source0:        https://github.com/prefix-dev/pixi/releases/download/v%{version}/pixi-x86_64-unknown-linux-musl.tar.gz
+#!RemoteAsset
+Source1:        https://raw.githubusercontent.com/prefix-dev/pixi/v%{version}/LICENSE
 
 ExclusiveArch:  x86_64
 
@@ -29,6 +32,8 @@ but for any language.
 %setup -q -c -T -a 0
 
 %install
+# vendor tarballs ship no license text; the repo LICENSE rides along
+install -Dpm0644 %{SOURCE1} %{buildroot}%{_licensedir}/%{name}/LICENSE
 install -Dpm755 pixi %{buildroot}%{_bindir}/pixi
 ./pixi completion --shell bash > pixi.bash
 ./pixi completion --shell zsh > _pixi
@@ -38,6 +43,7 @@ install -Dpm644 _pixi %{buildroot}%{_datadir}/zsh/site-functions/_pixi
 install -Dpm644 pixi.fish %{buildroot}%{_datadir}/fish/vendor_completions.d/pixi.fish
 
 %files
+%license LICENSE
 %{_bindir}/pixi
 %{_datadir}/bash-completion/completions/pixi
 %{_datadir}/zsh/site-functions/_pixi

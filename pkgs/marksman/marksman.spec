@@ -5,6 +5,7 @@
 # carry no license text). Tags are dates (2026-02-08); the version converts
 # the dashes to dots and the raw tag travels in %%markstag for the URLs.
 %define debug_package %{nil}
+%global _build_id_links none
 
 %global markstag 2026-02-08
 

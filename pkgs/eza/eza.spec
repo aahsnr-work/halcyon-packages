@@ -49,137 +49,6 @@ A modern replacement for ls.}
 %doc TESTING.md
 %{_bindir}/eza
 
-%package        devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description    devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "%{crate}" crate.
-
-%files          devel
-%license %{crate_instdir}/LICENSE.txt
-%license %{crate_instdir}/LICENSES/CC-BY-4.0.txt
-%license %{crate_instdir}/LICENSES/EUPL-1.2.txt
-%license %{crate_instdir}/LICENSES/MIT.txt
-%doc %{crate_instdir}/CHANGELOG.md
-%doc %{crate_instdir}/CODE_OF_CONDUCT.md
-%doc %{crate_instdir}/CONTRIBUTING.md
-%doc %{crate_instdir}/INSTALL.md
-%doc %{crate_instdir}/README.md
-%doc %{crate_instdir}/SECURITY.md
-%doc %{crate_instdir}/TESTING.md
-%{crate_instdir}/
-
-%package     -n %{name}+default-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+default-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "default" feature of the "%{crate}" crate.
-
-%files       -n %{name}+default-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+git-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+git-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "git" feature of the "%{crate}" crate.
-
-%files       -n %{name}+git-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+git2-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+git2-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "git2" feature of the "%{crate}" crate.
-
-%files       -n %{name}+git2-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+nix-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+nix-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "nix" feature of the "%{crate}" crate.
-
-%files       -n %{name}+nix-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+nix-generated-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+nix-generated-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "nix-generated" feature of the "%{crate}" crate.
-
-%files       -n %{name}+nix-generated-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+nix-local-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+nix-local-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "nix-local" feature of the "%{crate}" crate.
-
-%files       -n %{name}+nix-local-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+powertest-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+powertest-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "powertest" feature of the "%{crate}" crate.
-
-%files       -n %{name}+powertest-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+vendored-libgit2-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+vendored-libgit2-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "vendored-libgit2" feature of the "%{crate}" crate.
-
-%files       -n %{name}+vendored-libgit2-devel
-%ghost %{crate_instdir}/Cargo.toml
-
-%package     -n %{name}+vendored-openssl-devel
-Summary:        %{summary}
-BuildArch:      noarch
-
-%description -n %{name}+vendored-openssl-devel %{_description}
-
-This package contains library source intended for building other packages which
-use the "vendored-openssl" feature of the "%{crate}" crate.
-
-%files       -n %{name}+vendored-openssl-devel
-%ghost %{crate_instdir}/Cargo.toml
-
 %prep
 %autosetup -n %{crate}-%{version} -p1
 # upstream's Cargo.lock pairs palette 0.7.5 with palette_derive 0.7.7, whose
@@ -244,6 +113,11 @@ export SCCACHE_DIR=/sccache
 %install
 export SCCACHE_DIR=/sccache
 %cargo_install
+# the crate is a lib+bin crate, so cargo_install copies the crate
+# source into the cargo registry for a -devel subpackage; the devel
+# subpackages are dropped here (plain package names, bin-only), so
+# the registry copy goes with them
+rm -rf %{buildroot}%{_datadir}/cargo/registry/%{crate}-%{version}
 
 %if %{with check}
 %check

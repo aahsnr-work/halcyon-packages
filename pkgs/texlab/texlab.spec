@@ -20,7 +20,6 @@ Summary:        LaTeX Language Server Protocol implementation
 # dependency licenses are aggregated in LICENSE.dependencies
 License:        GPL-3.0-only
 URL:            https://github.com/latex-lsp/texlab
-#!RemoteAsset
 Source0:        %{url}/archive/refs/tags/v%{version}.tar.gz
 
 BuildRequires:  cargo

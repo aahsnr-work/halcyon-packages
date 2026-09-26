@@ -16,7 +16,7 @@ Name:           ticktick
 Version:        8.0.11
 Release:        1%{?dist}
 Summary:        Official desktop application for Linux
-License:        Proprietary
+License:        LicenseRef-Proprietary
 URL:            https://ticktick.com/download
 #!RemoteAsset
 Source0:        https://d2atcrkye2ik4e.cloudfront.net/download/linux/linux_deb_x64/ticktick-%{version}-amd64.deb
@@ -37,6 +37,7 @@ Requires:       libappindicator-gtk3
 Requires:       libsecret
 
 %define debug_package %{nil}
+%global _build_id_links none
 %global __os_install_post %{nil}
 # the payload must stay byte-identical to the vendor blob
 %global __brp_strip %{nil}
@@ -91,7 +92,7 @@ chmod 4755 %{buildroot}/opt/TickTick/chrome-sandbox
 %{_licensedir}/ticktick/
 
 %changelog
-* Mon Sep 22 2026 halcyon-autobuild - 8.0.11-1
+* Tue Sep 22 2026 halcyon-autobuild - 8.0.11-1
 - follow the AUR PKGBUILD: vendor .deb payload (desktop file + icons now
   included), /usr/bin/ticktick launcher with user-flags support, Electron/
   Chromium licenses relocated, SUID chrome-sandbox

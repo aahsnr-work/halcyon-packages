@@ -20,7 +20,6 @@ License:        (0BSD OR MIT OR Apache-2.0) AND (Apache-2.0 AND ISC) AND (Apache
 URL:            https://crates.io/crates/tealdeer
 # the crates.io download URL spelled out: mock fetches sources at
 # SRPM-build time, before any buildroot macro exists
-#!RemoteAsset
 Source0:        https://static.crates.io/crates/%{crate}/%{crate}-%{version}.crate
 
 BuildRequires:  cargo-rpm-macros >= 24
@@ -46,7 +45,7 @@ offline client with caching support.}
 %prep
 %autosetup -n %{crate}-%{version} -p1
 # online-cargo build config — replaces terra's %%cargo_prep_online_sccache
-# (anda-srpm-macros is no longer a build input). Same shape: the [profile.rpm]
+# (no external macro package involved). Same shape: the [profile.rpm]
 # the Fedora cargo macros build with, the redhat flag env, sccache as the
 # rustc wrapper, the install root — with no [net] offline and no
 # local-registry replacement, so crates fetch from crates.io at build time.

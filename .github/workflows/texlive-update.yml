@@ -58,6 +58,7 @@ jobs:
           git config user.name "halcyon-autoupdate"
           git config user.email "aahsnr041@proton.me"
       - name: ISO-week parity guard
+        id: parity
         if: github.event_name == 'schedule'
         run: |
           set -eu
@@ -65,10 +66,14 @@ jobs:
           # always roll
           if [ $((10#$(date +%V) % 2)) -ne 0 ]; then
             echo "ISO week $(date +%V) is odd — not a texlive roll week"
+            echo "roll=skip" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "ISO week $(date +%V) — rolling"
+          echo "roll=roll" >> "$GITHUB_OUTPUT"
       - name: Roll the texlive group specs
+        # the guard ends only its own step — gate the real work on it
+        if: steps.parity.outputs.roll != 'skip'
         run: |
           set -euo pipefail
           # word splitting on ROLL_ARGS is intended — it is a flag list
@@ -81,6 +86,7 @@ jobs:
           [ -n "$snapshot" ] || { echo "roll.py printed no snapshot"; exit 1; }
           echo "TL_SNAPSHOT=${snapshot}" >> "$GITHUB_ENV"
       - name: Commit the roll
+        if: steps.parity.outputs.roll != 'skip'
         run: |
           set -eu
           if [ -z "$(git status --porcelain -- pkgs/ ci/packages.toml)" ]; then
@@ -101,4 +107,7 @@ jobs:
             fi
             echo "push race (attempt ${attempt}) — rebasing onto origin/main"
           done
-          echo "rolled to ${snapshot} — copr-build.yml batch-5 wave takes it from here"
+          echo "rolled to ${TL_SNAPSHOT}"
+          # a GITHUB_TOKEN push does not trigger workflow runs — dispatch the
+          # cascade explicitly
+          GH_TOKEN="${{ github.token }}" gh workflow run copr-build.yml --ref main

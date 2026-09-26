@@ -2,6 +2,10 @@ name: builder-image
 permissions:
   contents: read
   packages: write
+
+concurrency:
+  group: builder-image
+  cancel-in-progress: false
 on:
   push:
     branches: [main]

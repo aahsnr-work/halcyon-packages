@@ -7,7 +7,7 @@ with automated upstream version tracking, built on **Fedora Copr**
 Each package lives in `pkgs/<pkg>/` with a plain
 RPM spec and whatever the spec references (`macros.*`, patches, `.desktop`,
 helper scripts). GitHub Actions generates the SRPMs (`spectool` +
-`rpmbuild -bs`), submits them to Copr wave-by-wave, and a daily sweeper
+`rpmbuild -bs`), submits them to Copr wave-by-wave, and a sweeper
 (`ci/sweep/`) bumps spec versions from upstream feeds — a merged bump (or an
 automatic one) lands in the Copr repo without manual steps. Copr owns the
 build farm, the GPG signing and the repo hosting; there is no Pages repo, no
@@ -18,7 +18,7 @@ R2 bucket, no self-run publishing.
   `priority=1` into the copr-plugin-generated file) so everything this repo
   builds — the hyprwm stack, glaze/hyprwire/hyprtoolkit, chafa, the CLI
   tools — always wins over Fedora, Terra and unprioritized Coprs
-- Registry: `ci/packages.toml` — 50 hand packages + the 40 generated
+- Registry: `ci/packages.toml` — 51 hand packages + the 40 generated
   texlive rolling groups in 5 dependency batches, sweep feeds under each
   package's `[pkg.updates]` (the texlive groups have none — the biweekly
   roll owns them)
@@ -31,11 +31,11 @@ R2 bucket, no self-run publishing.
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pkgs/<pkg>/`        | one directory per package: `<pkg>.spec` plus whatever the spec references (patches, metainfo, helper scripts, macros)                             |
 | `ci/`                | `packages.toml` (dependency-order registry + sweep feeds), `matrix.py` (build-matrix generator), `sweep/` (the version sweeper)                    |
-| `ci/sweep/`          | `sweep.py` (engine), `feeds.py` (GitHub/URL feeds), `custom.py` (the 11 hand-ported feed logics), `spec.py`/`vercmp.py`, `verify.py` (equivalence harness) |
+| `ci/sweep/`          | `sweep.py` (engine), `feeds.py` (GitHub/URL feeds), `custom.py` (the 10 feed logics), `spec.py`/`vercmp.py` |
 | `.github/builder/`   | the CI job image (fedora-minimal 44 + copr-cli, python3, rpm-build, rpmdevtools)                                                                   |
 | `templates/`         | starting points for specs: `source-build.spec.tmpl`, `binary-wrapper.spec.tmpl`, `meta-group.spec.tmpl`, `python-hatchling.spec.tmpl`              |
 | `tools/`             | helper generators (TeX Live grouped-RPM splitter)                                                                                                  |
-| `.github/workflows/` | `copr-build.yml` (SRPM gen + wave-submission), `update.yml` (daily sweep), `builder-docker.yml` (CI image)                                         |
+| `.github/workflows/` | `copr-build.yml` (SRPM gen + wave-submission), `update.yml` (sweep, chained to the cascade + weekly floor), `texlive-update.yml` (biweekly roll), `repoclosure.yml` (closure check), `builder-docker.yml` (CI image) |
 
 ## How a build happens
 
@@ -57,7 +57,7 @@ R2 bucket, no self-run publishing.
 
 ## How a version bump happens
 
-1. `update.yml` runs daily (04:17 UTC): `ci/sweep/sweep.py` asks each
+1. `update.yml` runs chained after every cascade and weekly (Mondays 04:17 UTC): `ci/sweep/sweep.py` asks each
    package's configured feed (`[pkg.updates]` in `ci/packages.toml`) for the
    latest upstream version and edits the spec — `Version:` + `Release:` reset
    to 1, `%global` pins, occasionally a `Source*` rewrite. Specs are written
@@ -72,11 +72,9 @@ R2 bucket, no self-run publishing.
    pick it in the manual dispatch) and the bumps land on one `bump/<date>`
    branch + a single PR instead.
 
-The sweep logic was ported 1:1 from the old `update.rhai` scripts and
-verified against `anda update` with `ci/sweep/verify.py` (42/46 packages
-byte-identical; the four exceptions — three rhai scripts that crashed before
-writing anything, one rhai output that was itself broken — are documented in
-`ci/sweep/verify.py`).
+The sweep logic was ported 1:1 from the old `update.rhai` scripts (proven
+against real `anda update` runs while anda still existed — 42/46 packages
+byte-identical); the harness itself was retired with the anda tooling.
 
 ## Adding or enabling a package
 
@@ -93,7 +91,7 @@ writing anything, one rhai output that was itself broken — are documented in
      list (`copr-cli edit-chroot halcyon/fedora-44-x86_64 --repos …`), not
      the spec.
 2. Register it in `ci/packages.toml` with a `batch` at least one higher than
-   every package it build-requires, and an `[pkg.updates]` feed so the daily
+   every package it build-requires, and an `[pkg.updates]` feed so the
    sweep keeps the version fresh (`feed = "github-release"` / `"github-tag"`
    with `repo = "owner/name"`, or `feed = "custom"` + a function in
    `ci/sweep/custom.py` for nontrivial feeds).
@@ -119,8 +117,8 @@ copr-cli create halcyon \
   --instructions "Enable with: dnf copr enable aahsnr-work/halcyon fedora-44
 Then install, e.g.: sudo dnf install hyprland"
 
-# build-time repos: Terra 44 (supplies anda-srpm-macros for the rust specs —
-# NOT in Fedora 44) + lionheartp/Hyprland (lowest-priority bootstrap only)
+# build-time repos: Terra 44 (buildroot extras some specs rely on) +
+# lionheartp/Hyprland (lowest-priority bootstrap only)
 copr-cli edit-chroot halcyon/fedora-44-x86_64 --repos \
   "https://repos.fyralabs.com/terra44 \
    https://download.copr.fedorainfracloud.org/results/lionheartp/Hyprland/fedora-44-x86_64/"
@@ -158,7 +156,7 @@ ones after 14 days — a failed build never replaces the published version.
 | workflow             | trigger                                                        | does                                                                                                                       |
 | -------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `copr-build.yml`     | push to `main` (`pkgs/**`, `ci/**`), PRs, manual (`only` input) | validates (syntax, registry consistency, build plan, actionlint), splits the matrix into batch waves, submits SRPMs, waits per wave |
-| `update.yml`         | daily 04:17 UTC, manual (`mode`, `pkg` inputs)                  | `ci/sweep/sweep.py` bumps specs from upstream feeds; commits to main (default) or opens one bump PR                        |
+| `update.yml`         | chained after every cascade + weekly floor, manual (`mode`, `pkg`) | `ci/sweep/sweep.py` bumps specs from upstream feeds; commits to main (default) or opens one bump PR                        |
 | `builder-docker.yml` | push (`.github/builder/**`), PRs, manual                        | builds/pushes the CI job image (copr-cli, python3, rpm tooling — no buildroot: Copr owns the chroots)                       |
 
 Secrets: `COPR_CLICONF` (the copr-cli API config; the token expires after

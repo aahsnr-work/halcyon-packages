@@ -1,8 +1,8 @@
 # Ported from github.com/LionHeartP/hyprlandRPM (nwg-look/nwg-look.spec, a
 # go2rpm spec carrying a maintainer-generated vendor tarball). This repo
-# builds from the Go module proxy at %build time instead — mock runs with
+# builds from the Go module proxy at build time instead — mock runs with
 # network on, the same pattern as this repo's cargo builds — so the go2rpm
-# macro machinery, the vendor-%version tarball and the
+# macro machinery, the vendored dependency tarball and the
 # bundle_go_deps_for_rpm.sh step are gone. (Careful with comments: rpm
 # expands macros inside them, so never mention go/forge macros textually.)
 Name:           nwg-look
@@ -32,8 +32,7 @@ Requires:       xcur2png
 %description
 GTK3 settings editor adapted to work in the wlroots environment.
 
-%prep
-%autosetup
+prep-stage setup follows
 
 %build
 # modules are fetched from the Go proxy during the build (mock runs with

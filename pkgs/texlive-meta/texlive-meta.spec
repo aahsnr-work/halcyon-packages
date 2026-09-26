@@ -8,7 +8,7 @@ Version:        20260925
 Release:        1%{?dist}
 Summary:        TeX Live scheme-full, without documentation
 BuildArch:      noarch
-License:        GPL+ and others (TeX Live collective licenses)
+License:        GPL-1.0-or-later AND BSD-3-Clause AND LPPL-1.3c AND MIT AND public-domain
 URL:            https://tug.org/texlive/
 
 Requires:       texlive-basic = %{version}

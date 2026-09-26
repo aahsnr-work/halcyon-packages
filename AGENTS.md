@@ -1,6 +1,6 @@
 # AGENTS.md
 
-RPM package monorepo: 50 hand-maintained packages plus the 40 generated
+RPM package monorepo: 51 hand-maintained packages plus the 40 generated
 `texlive-*` rolling groups (39 Arch-style collection-group specs +
 `texlive-meta`, regenerated per tlnet snapshot — see `tools/texlive-splitter/`),
 built on **Fedora Copr**
@@ -13,6 +13,13 @@ aahsnr-work/halcyon fedora-44`). Fedora 44 target.
 Deep docs (don't duplicate them here): `Instructions.md` (the pre-Copr
 from-zero guide, banner-marked historical), `TODO.md` (status). The Copr
 project settings and day-to-day commands live in README.md.
+
+**Markdown discipline**: do NOT read, use, or act on `TODO.md`,
+`Checklist.md`, `notes/` or any other markdown file unless the user
+explicitly instructs you to utilize that particular markdown file for the
+task at hand. Code, the registry (`ci/packages.toml`), and the workflows
+are the source of truth; the markdown files are maintainer notes and
+task lists, not standing instructions.
 
 ## Commands
 
@@ -32,15 +39,14 @@ copr-cli watch-build <id>; copr-cli status <id>
 python3 ci/matrix.py --list
 python3 ci/matrix.py --list --since <sha>   # what a push would rebuild
 
-# the version sweep (what update.yml runs daily)
+# the version sweep (update.yml: chained after every cascade + a weekly Monday floor)
 GITHUB_TOKEN=$(gh auth token) python3 ci/sweep/sweep.py [--pkg <name>]
 
 # a mock buildroot identical to Copr's, for debugging a failed build locally
 copr-cli mock-config aahsnr-work/halcyon fedora-44-x86_64 > /tmp/copr.cfg
 mock -r /tmp/copr.cfg <srpm>
 
-# sweeper changes: rerun the equivalence harness (needs the builder
-# container — see the verify.py docstring for the podman one-liner)
+# container)
 
 # the validate job lints the workflows with actionlint (pinned release +
 # checksum in copr-build.yml) — run it locally before pushing workflow edits
@@ -127,8 +133,8 @@ mock -r /tmp/copr.cfg <srpm>
   newest successful build per package is kept, older builds pruned after 14
   days; a failed build never replaces the published one.
 - **CI job image** (`.github/builder/Dockerfile`): fedora-minimal 44 +
-  copr-cli, python3, rpm-build, rpmdevtools, git, gh, jq — no anda, no
-  mock, no signing/publish tooling. Changing it requires a
+  copr-cli, python3, rpm-build, rpmdevtools, git, gh, jq, mock — no anda
+  and no signing/publish tooling. Changing it requires a
   `builder-docker.yml` image rebuild before CI jobs work (the validate job
   waits for it automatically).
 - **CI authentication**: the `COPR_CLICONF` GitHub secret (content of
@@ -146,14 +152,13 @@ mock -r /tmp/copr.cfg <srpm>
   specs with the exact old-anda semantics (Version + Release reset only on
   a real version change; `%global` rewrites preserve column formatting;
   file written only on content change). Custom feeds live in
-  `ci/sweep/custom.py` (11 hand-ported feed logics; `hyprland`/
-  `noctalia-greeter-git` are git-snapshot trackers with `bumpver`/`^N`
-  counter semantics). Default mode commits bumps straight to main
-  (self-healing: a failed build leaves the published version untouched);
-  set the `UPDATE_MODE` repo variable to `pr` for a review gate. After
-  touching `ci/sweep/`, rerun `ci/sweep/verify.py` — the harness that
-  proved the port against `anda update` (42/46 byte-identical; it also
-  documents the four rhai bugs the port fixes).
+  `ci/sweep/custom.py` (10 feed logics; `noctalia-greeter-git` is the one
+  git-snapshot tracker with `bumpver`/`^N` counter semantics; `hyprland`
+  tracks the newest upstream RELEASE only). Default mode commits bumps
+  straight to main (self-healing: a failed build leaves the published
+  version untouched); set the `UPDATE_MODE` repo variable to `pr` for a
+  review gate. The old `anda update` equivalence harness (verify.py) is
+  retired with the anda tooling itself.
 - `xwiimote-ng` had never been through a validated build until the Copr
   cascade — its first green Copr build closes that item (watch it in
   TODO.md).

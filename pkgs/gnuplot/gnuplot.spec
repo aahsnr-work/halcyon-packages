@@ -11,7 +11,6 @@ Release:        1%{?dist}
 Summary:        Program for plotting functions and data
 License:        gnuplot
 URL:            http://gnuplot.info
-#!RemoteAsset
 Source0:        https://downloads.sourceforge.net/project/gnuplot/gnuplot/%{version}/gnuplot-%{version}.tar.gz
 
 BuildRequires:  gcc
@@ -50,5 +49,5 @@ rm -f %{buildroot}%{_libdir}/libgnuplot.la
 %{_datadir}/gnuplot/
 
 %changelog
-* Mon Sep 22 2026 halcyon-autobuild - 6.0.5-1
+* Tue Sep 22 2026 halcyon-autobuild - 6.0.5-1
 - lean console/cairo build kept in the halcyon repository

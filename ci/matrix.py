@@ -11,10 +11,10 @@ Selection semantics:
   --since REV   every package whose pkgs/<name>/ directory changed since REV,
                 plus its transitive dependents (packages that BuildRequire
                 it, resolved from the specs). Touches under ci/ or
-                .github/builder/ rebuild everything, as does a changed set
-                whose spec BuildRequires cannot be parsed confidently
-                (then the old batch-floor cascade applies: every package
-                in a batch >= the lowest changed one).
+                .github/builder/ rebuild everything, as does a push that
+                touches no registered package. A spec whose BuildRequires
+                cannot be parsed confidently is seeded on every lower-batch
+                change (with its own dependents following).
   no --since    the whole registry (first submission / manual full runs).
 
 Batch numbers come from ci/packages.toml, which stays the dependency-order
@@ -31,7 +31,7 @@ Usage:
 
 With --label each emitted entry carries extra labels (the workflow uses
 labels.batch to wave the matrix). Without --list the script prints
-`build_matrix=...` on stdout plus `batches=N M ...` so the workflow knows
+`build_matrix=...` on stdout plus `batches=N,M,...` so the workflow knows
 which waves exist without re-parsing the JSON.
 """
 
@@ -69,9 +69,18 @@ def git_lines(*args: str) -> list[str]:
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
 
 
+def git_rev_exists(rev: str) -> bool:
+    proc = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "cat-file", "-e", f"{rev}^{{commit}}"],
+        capture_output=True,
+        text=True,
+    )
+    return proc.returncode == 0
+
+
 def package_paths(name: str) -> tuple[Path, Path]:
     """Spec location for a registry name: every package (hand-maintained or
-    generated, incl. the flat texlive-texmf set) lives at pkgs/<name>/<name>.spec."""
+    generated, the texlive-* groups included) lives at pkgs/<name>/<name>.spec."""
     base = REPO_ROOT / "pkgs" / name
     spec = base / f"{name}.spec"
     return base, spec
@@ -202,8 +211,9 @@ def dependents_closure(pkgs: dict[str, dict], changed: set[str]) -> set[str]:
     The registry is a static build plan: a package only sees another
     package's output through its BuildRequires, so runtime Requires do not
     force rebuilds. Specs with macro-wrapped BuildRequires (unresolvable)
-    are pulled in whenever a strictly lower batch changed — the
-    conservative per-spec form of the old batch-floor cascade."""
+    are seeded whenever a strictly lower batch changed — and their own
+    dependents BFS from them — the conservative per-spec form of the old
+    batch-floor cascade."""
     registry = {n: n for n in pkgs}
     registry.update({n.lower(): n for n in pkgs})
     reverse: dict[str, set[str]] = {}
@@ -212,25 +222,35 @@ def dependents_closure(pkgs: dict[str, dict], changed: set[str]) -> set[str]:
             provider = _resolve_token(token, registry)
             if provider and provider != name:
                 reverse.setdefault(provider, set()).add(name)
-    closure = set(changed)
-    frontier = set(changed)
-    while frontier:
-        nxt: set[str] = set()
-        for name in frontier:
-            for dependent in reverse.get(name, ()):
-                if dependent not in closure:
-                    closure.add(dependent)
-                    nxt.add(dependent)
-        frontier = nxt
+
+    def bfs(seeds: set[str], closure: set[str]) -> set[str]:
+        frontier = set(seeds)
+        while frontier:
+            nxt: set[str] = set()
+            for name in frontier:
+                for dependent in reverse.get(name, ()):
+                    if dependent not in closure:
+                        closure.add(dependent)
+                        nxt.add(dependent)
+            frontier = nxt
+        return closure
+
+    closure = bfs(changed, set(changed))
     floor = min(pkgs[name]["batch"] for name in changed)
-    for name, meta in pkgs.items():
-        if meta["conservative"] and name not in closure and meta["batch"] > floor:
-            closure.add(name)
+    conservative = {
+        n for n, m in pkgs.items()
+        if m["conservative"] and n not in closure and m["batch"] > floor
+    }
+    if conservative:
+        # their own dependents must follow them too — BFS from the seeds
+        bfs(conservative, closure)
     return closure
 
 
 def select_since(pkgs: dict[str, dict], rev: str) -> set[str]:
     """Changed packages since REV, plus their BuildRequirements dependents."""
+    if not git_rev_exists(rev):
+        die(f"--since {rev}: not a valid revision")
     paths = git_lines("diff", "--name-only", f"{rev}..HEAD")
     if not paths:
         print(f"no file changes in {rev}..HEAD", flush=True)

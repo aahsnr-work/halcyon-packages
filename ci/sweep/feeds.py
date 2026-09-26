@@ -54,12 +54,6 @@ def fetch_json(url: str):
     return json.loads(fetch_text(url))
 
 
-def fetch_headers(url: str) -> dict[str, str]:
-    """GET and return only the response headers (the commits-count probe)."""
-    with urllib.request.urlopen(_get(url), timeout=60) as resp:
-        return dict(resp.headers.items())
-
-
 def find_group(pattern: str, text: str, group: int = 1, dotall: bool = False) -> str:
     """andax find() port; a no-match is an error, not an empty string — a
     silent empty version would corrupt the spec."""
@@ -122,32 +116,6 @@ def github_latest_tag(repo: str) -> str:
     return best
 
 
-def github_newest_release_branch(repo: str, suffix: str = "-b") -> str:
-    """The newest maintenance branch of a repo (hyprwm cuts a `vX.Y.Z-b`
-    bugfix branch per release — that is the current stable line; there is no
-    plain `stable` branch). Returns the full branch name (`v0.56.2-b`), empty
-    when no branch matches the suffix."""
-    names: list[str] = []
-    url: str | None = f"{GITHUB_API}/repos/{repo}/branches?per_page=100"
-    for _ in range(20):
-        if not url:
-            break
-        req = urllib.request.Request(url, headers=_headers_for(url))
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            names.extend(b["name"] for b in json.loads(resp.read().decode()))
-            url = _next_link(resp.headers.get("Link", ""))
-    candidates = [n for n in names if n.endswith(suffix)]
-    if not candidates:
-        return ""
-    from vercmp import rpmvercmp
-
-    best = candidates[0]
-    for name in candidates[1:]:
-        if rpmvercmp(name.removeprefix("v"), best.removeprefix("v")) > 0:
-            best = name
-    return best
-
-
 def github_commit(repo: str, ref: str = "") -> str:
     """gh_commit() port: the tip commit of the default branch (or `ref`).
     Without a ref the commits endpoint returns a LIST — take its head."""
@@ -158,35 +126,3 @@ def github_commit(repo: str, ref: str = "") -> str:
     return (data[0] if isinstance(data, list) else data)["sha"]
 
 
-def github_commits_count(repo: str, commit: str) -> str:
-    """Total commits up to `commit`, read off the Link header of a per_page=1
-    listing (the rhai curl'd -I for this; urllib sees the same header)."""
-    headers = fetch_headers(
-        f"{GITHUB_API}/repos/{repo}/commits?per_page=1&sha={commit}"
-    )
-    link = headers.get("Link", "")
-    m = re.search(r'page=([0-9]+)[^,]*rel="last"', link)
-    return m.group(1) if m else ""
-
-
-def github_contents_sha(repo: str, path: str, ref: str) -> str:
-    """SHA of a path at `ref` (the hyprland submodule pins)."""
-    from urllib.parse import quote
-
-    data = fetch_json(
-        f"{GITHUB_API}/repos/{repo}/contents/{quote(path)}?ref={ref}"
-    )
-    return data["sha"]
-
-
-def format_commit_date(iso_date: str) -> str:
-    """The hyprland spec's commit_date format: GNU date's
-    `+%a %b %d %T %Y` on the author date. Shelling out to `date -d` keeps the
-    output byte-identical to what the rhai produced (same binary, same TZ)."""
-    proc = subprocess.run(
-        ["date", "-d", iso_date, "+%a %b %d %T %Y"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return proc.stdout.strip()

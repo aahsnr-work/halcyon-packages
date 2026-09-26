@@ -15,8 +15,9 @@ URL:            https://opencode.ai
 Source0:        https://registry.npmjs.org/@opencode%2Fcli-linux-x64/-/cli-linux-x64-%{version}.tgz
 # prebuilt foreign binary: no debug sources to collect
 %define debug_package %{nil}
+%global _build_id_links none
 
-BuildArch:      x86_64
+ExclusiveArch: x86_64
 %description
 AI coding agent built for the terminal, from the upstream v2 release binary.
 %prep
@@ -28,12 +29,12 @@ install -Dm0755 package/bin/opencode %{buildroot}%{_bindir}/opencode
 %files
 %{_bindir}/opencode
 %changelog
-* Mon Sep 22 2026 halcyon-autobuild - 2.0.14-5
+* Tue Sep 22 2026 halcyon-autobuild - 2.0.14-5
 - follow the v2 line (major rewrite): the version now sweeps
   opencode.ai/update/api/latest/cli/npm and the binary comes from the
   @opencode/cli-linux-x64 npm package (the old v1 GitHub-release zip asset
   no longer tracks the current version)
-* Mon Sep 22 2026 halcyon-autobuild - 1.18.31-4
+* Tue Sep 22 2026 halcyon-autobuild - 1.18.31-4
 - follow the current release artifact: opencode-linux-x64.tar.gz (the
   opencode-linux-x64.zip asset of the 0.12.0 era is gone upstream) and
   un-tar in %prep instead of unzip; latest release is 1.18.31

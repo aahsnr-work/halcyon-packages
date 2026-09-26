@@ -2,8 +2,8 @@
 # wrongly assumed a cargo build because crates.io 404s. Modeled on
 # LionHeartP/hyprlandRPM's go2rpm spec, adapted the nwg-look way: no go2rpm
 # macro machinery and no maintainer-generated vendor tarball — the modules
-# are fetched from the Go proxy during %build (mock runs with network on;
-# nothing is vendored or downloaded in %prep). The version string is
+# are fetched from the Go proxy during the build stage (mock runs with network on;
+# nothing is vendored or downloaded in prep). The version string is
 # embedded by upstream via go:embed version.txt, so no ldflags are needed.
 %define debug_package %{nil}
 

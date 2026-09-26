@@ -42,7 +42,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: copr-build
+  group: copr-build-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -96,7 +96,7 @@ jobs:
           # the shellcheck binary ships preinstalled on the runners
           shellcheck -S warning pkgs/*/*.sh
       - name: Python syntax
-        run: python3 -m py_compile ci/*.py ci/sweep/*.py
+        run: python3 -m py_compile ci/*.py ci/sweep/*.py tools/texlive-splitter/*.py
       - name: Registry consistency + build plan
         run: |
           set -eu
@@ -244,13 +244,15 @@ jobs:
   wait0:
     name: "wait for batch 0"
     needs: [manifest, submit0]
-    if: always() && needs.manifest.outputs.batch0 != '' && needs.submit0.result == 'success'
+    # empty wave: pass through green; failed submit: skipped (halts the chain)
+    if: always() && (needs.manifest.outputs.batch0 == '' || needs.submit0.result == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 330
     container:
       image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
     steps:
       - name: Copr credentials
+        if: needs.manifest.outputs.batch0 != ''
         env:
           COPR_CLICONF: ${{ secrets.COPR_CLICONF }}
         run: |
@@ -259,12 +261,14 @@ jobs:
           printf '%s\n' "$COPR_CLICONF" > ~/.config/copr
           chmod 600 ~/.config/copr
       - name: Download the wave's build ids
+        if: needs.manifest.outputs.batch0 != ''
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: "submit-0-*"
           merge-multiple: true
           path: ids
       - name: Watch the wave's builds
+        if: needs.manifest.outputs.batch0 != ''
         run: |
           set -eu
           ids=$(cat ids/build-id-*.txt | tr '\n' ' ')
@@ -288,7 +292,7 @@ jobs:
   submit1:
     name: "submit batch 1"
     needs: [manifest, wait0]
-    if: always() && needs.manifest.outputs.batch1 != '' && (needs.wait0.result == 'success' || needs.wait0.result == 'skipped')
+    if: always() && needs.manifest.outputs.batch1 != '' && (needs.wait0.result == 'success')
     strategy:
       matrix:
         pkg: ${{ fromJson(needs.manifest.outputs.batch1) }}
@@ -342,13 +346,15 @@ jobs:
   wait1:
     name: "wait for batch 1"
     needs: [manifest, submit1]
-    if: always() && needs.manifest.outputs.batch1 != '' && needs.submit1.result == 'success'
+    # empty wave: pass through green; failed submit: skipped (halts the chain)
+    if: always() && (needs.manifest.outputs.batch1 == '' || needs.submit1.result == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 330
     container:
       image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
     steps:
       - name: Copr credentials
+        if: needs.manifest.outputs.batch1 != ''
         env:
           COPR_CLICONF: ${{ secrets.COPR_CLICONF }}
         run: |
@@ -357,12 +363,14 @@ jobs:
           printf '%s\n' "$COPR_CLICONF" > ~/.config/copr
           chmod 600 ~/.config/copr
       - name: Download the wave's build ids
+        if: needs.manifest.outputs.batch1 != ''
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: "submit-1-*"
           merge-multiple: true
           path: ids
       - name: Watch the wave's builds
+        if: needs.manifest.outputs.batch1 != ''
         run: |
           set -eu
           ids=$(cat ids/build-id-*.txt | tr '\n' ' ')
@@ -384,7 +392,7 @@ jobs:
   submit2:
     name: "submit batch 2"
     needs: [manifest, wait1]
-    if: always() && needs.manifest.outputs.batch2 != '' && (needs.wait1.result == 'success' || needs.wait1.result == 'skipped')
+    if: always() && needs.manifest.outputs.batch2 != '' && (needs.wait1.result == 'success')
     strategy:
       matrix:
         pkg: ${{ fromJson(needs.manifest.outputs.batch2) }}
@@ -438,13 +446,15 @@ jobs:
   wait2:
     name: "wait for batch 2"
     needs: [manifest, submit2]
-    if: always() && needs.manifest.outputs.batch2 != '' && needs.submit2.result == 'success'
+    # empty wave: pass through green; failed submit: skipped (halts the chain)
+    if: always() && (needs.manifest.outputs.batch2 == '' || needs.submit2.result == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 330
     container:
       image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
     steps:
       - name: Copr credentials
+        if: needs.manifest.outputs.batch2 != ''
         env:
           COPR_CLICONF: ${{ secrets.COPR_CLICONF }}
         run: |
@@ -453,12 +463,14 @@ jobs:
           printf '%s\n' "$COPR_CLICONF" > ~/.config/copr
           chmod 600 ~/.config/copr
       - name: Download the wave's build ids
+        if: needs.manifest.outputs.batch2 != ''
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: "submit-2-*"
           merge-multiple: true
           path: ids
       - name: Watch the wave's builds
+        if: needs.manifest.outputs.batch2 != ''
         run: |
           set -eu
           ids=$(cat ids/build-id-*.txt | tr '\n' ' ')
@@ -480,7 +492,7 @@ jobs:
   submit3:
     name: "submit batch 3"
     needs: [manifest, wait2]
-    if: always() && needs.manifest.outputs.batch3 != '' && (needs.wait2.result == 'success' || needs.wait2.result == 'skipped')
+    if: always() && needs.manifest.outputs.batch3 != '' && (needs.wait2.result == 'success')
     strategy:
       matrix:
         pkg: ${{ fromJson(needs.manifest.outputs.batch3) }}
@@ -534,13 +546,15 @@ jobs:
   wait3:
     name: "wait for batch 3"
     needs: [manifest, submit3]
-    if: always() && needs.manifest.outputs.batch3 != '' && needs.submit3.result == 'success'
+    # empty wave: pass through green; failed submit: skipped (halts the chain)
+    if: always() && (needs.manifest.outputs.batch3 == '' || needs.submit3.result == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 330
     container:
       image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
     steps:
       - name: Copr credentials
+        if: needs.manifest.outputs.batch3 != ''
         env:
           COPR_CLICONF: ${{ secrets.COPR_CLICONF }}
         run: |
@@ -549,12 +563,14 @@ jobs:
           printf '%s\n' "$COPR_CLICONF" > ~/.config/copr
           chmod 600 ~/.config/copr
       - name: Download the wave's build ids
+        if: needs.manifest.outputs.batch3 != ''
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: "submit-3-*"
           merge-multiple: true
           path: ids
       - name: Watch the wave's builds
+        if: needs.manifest.outputs.batch3 != ''
         run: |
           set -eu
           ids=$(cat ids/build-id-*.txt | tr '\n' ' ')
@@ -579,7 +595,7 @@ jobs:
   submit4:
     name: "submit batch 4 (empty; kept for future waves)"
     needs: [manifest, wait3]
-    if: always() && needs.manifest.outputs.batch4 != '' && (needs.wait3.result == 'success' || needs.wait3.result == 'skipped')
+    if: always() && needs.manifest.outputs.batch4 != '' && (needs.wait3.result == 'success')
     strategy:
       matrix:
         pkg: ${{ fromJson(needs.manifest.outputs.batch4) }}
@@ -633,13 +649,15 @@ jobs:
   wait4:
     name: "wait for batch 4 (empty; kept for future waves)"
     needs: [manifest, submit4]
-    if: always() && needs.manifest.outputs.batch4 != '' && needs.submit4.result == 'success'
+    # empty wave: pass through green; failed submit: skipped (halts the chain)
+    if: always() && (needs.manifest.outputs.batch4 == '' || needs.submit4.result == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 330
     container:
       image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
     steps:
       - name: Copr credentials
+        if: needs.manifest.outputs.batch4 != ''
         env:
           COPR_CLICONF: ${{ secrets.COPR_CLICONF }}
         run: |
@@ -648,12 +666,14 @@ jobs:
           printf '%s\n' "$COPR_CLICONF" > ~/.config/copr
           chmod 600 ~/.config/copr
       - name: Download the wave's build ids
+        if: needs.manifest.outputs.batch4 != ''
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: "submit-4-*"
           merge-multiple: true
           path: ids
       - name: Watch the wave's builds
+        if: needs.manifest.outputs.batch4 != ''
         run: |
           set -eu
           ids=$(cat ids/build-id-*.txt | tr '\n' ' ')
@@ -680,7 +700,7 @@ jobs:
   submit5:
     name: "submit batch 5 (texlive groups)"
     needs: [manifest, wait4]
-    if: always() && needs.manifest.outputs.batch5 != '' && (needs.wait4.result == 'success' || needs.wait4.result == 'skipped')
+    if: always() && needs.manifest.outputs.batch5 != '' && (needs.wait4.result == 'success')
     strategy:
       matrix:
         pkg: ${{ fromJson(needs.manifest.outputs.batch5) }}
@@ -732,13 +752,15 @@ jobs:
   wait5:
     name: "wait for batch 5 (texlive groups)"
     needs: [manifest, submit5]
-    if: always() && needs.manifest.outputs.batch5 != '' && needs.submit5.result == 'success'
+    # empty wave: pass through green; failed submit: skipped (halts the chain)
+    if: always() && (needs.manifest.outputs.batch5 == '' || needs.submit5.result == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 330
     container:
       image: ghcr.io/${{ github.repository_owner }}/halcyon-builder:f44
     steps:
       - name: Copr credentials
+        if: needs.manifest.outputs.batch5 != ''
         env:
           COPR_CLICONF: ${{ secrets.COPR_CLICONF }}
         run: |
@@ -747,12 +769,14 @@ jobs:
           printf '%s\n' "$COPR_CLICONF" > ~/.config/copr
           chmod 600 ~/.config/copr
       - name: Download the wave's build ids
+        if: needs.manifest.outputs.batch5 != ''
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: "submit-5-*"
           merge-multiple: true
           path: ids
       - name: Watch the wave's builds
+        if: needs.manifest.outputs.batch5 != ''
         run: |
           set -eu
           ids=$(cat ids/build-id-*.txt | tr '\n' ' ')

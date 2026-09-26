@@ -17,7 +17,7 @@ Version:        20260925
 Release:        1%{?dist}
 Summary:        TeX Live basic collection — Essential programs and files
 BuildArch:      noarch
-License:        GPL+ and others (TeX Live collective licenses)
+License:        GPL-1.0-or-later AND BSD-3-Clause AND LPPL-1.3c AND MIT AND public-domain
 URL:            https://tug.org/texlive/
 
 %global _tl_archive_url https://texlive.info/tlnet-archive/2026/09/25/tlnet
@@ -93,15 +93,18 @@ for entry in raw/*; do
         *)                cp -a "$entry"   staging/texmf-dist/ ;;
     esac
 done
-# the tarballs bundle documentation and sources; neither is in this split
-rm -rf staging/texmf-dist/doc staging/texmf-dist/source
+# the tarballs bundle documentation; none ships (no docfiles are claimed).
+# texmf-dist/source/ STAYS: those files are runfiles in the tlpdb (koma-
+# script's are claimed), and install-tl's option_src only governed the
+# separate texmf-src tree — the old validated staging shipped them too.
+rm -rf staging/texmf-dist/doc
 # kpathsea filename database — install-tl generated this manifest in the
 # old staging model; here it is derived from the fetched tree itself, in
 # mktexlsr's directory-blocked format (block per directory, entries under
 # it, every directory listed in its parent's block)
-( printf '%%%% ls-R -- filename database for kpathsea.\n%%%% Run mktexlsr to regenerate.\n'
+( printf '%% ls-R -- filename database for kpathsea.\n%% Run mktexlsr to regenerate.\n'
   cd staging/texmf-dist && find . -mindepth 1 | sed 's|^\./||' | LC_ALL=C sort \
-  | awk -F/ '{ d="./"; for (i=1;i<NF;i++) d=d $i "/"; if (d!=p) { print d ":"; p=d } print $NF }'
+  | awk -F/ '{ d="./"; for (i=1;i<NF;i++) d=d $i "/"; sub("/$", "", d); if (d!=p) { print d ":"; p=d } print $NF }'
 ) > staging/texmf-dist/ls-R
 
 %install
