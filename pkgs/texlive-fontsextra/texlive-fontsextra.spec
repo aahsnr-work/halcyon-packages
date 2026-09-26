@@ -441,6 +441,10 @@ for entry in raw/*; do
         *)                cp -a "$entry"   staging/texmf-dist/ ;;
     esac
 done
+# upstream scripts carry pre-usrmerge shebangs (#!/bin/python3 and friends);
+# the shebang mangler is disabled, so rpm would emit unresolvable file
+# dependencies — normalize them to /usr/bin
+find staging/texmf-dist -type f -exec sed -i '1s|^#!/bin/|#!/usr/bin/|' {} + 2>/dev/null || true
 # the tarballs bundle documentation; none ships (no docfiles are claimed).
 # texmf-dist/source/ STAYS: those files are runfiles in the tlpdb (koma-
 # script's are claimed), and install-tl's option_src only governed the

@@ -11,3 +11,7 @@
   2.  fzy
   3.  opencode-desktop
   4.  podman-desktop
+  5.  antigravity-ide
+  6.  antigravity-cli
+  7.  kilo cli
+  8.  zcode desktop

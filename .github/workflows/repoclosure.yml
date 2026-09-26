@@ -55,6 +55,18 @@ jobs:
           gpgkey=https://repos.fyralabs.com/terra44/key.asc
           enabled=1
           EOF
+          # the lionheartp bootstrap repo is part of the Copr buildroot; kitty's
+          # shader-slang-devel resolves only through it (documented in its spec)
+          cat > /etc/yum.repos.d/lionheartp.repo <<'EOF'
+          [lionheartp]
+          name=Copr repo for Hyprland owned by LionHeartP
+          baseurl=https://download.copr.fedorainfracloud.org/results/lionheartp/Hyprland/fedora-$releasever-$basearch/
+          type=rpm-md
+          skip_if_unavailable=True
+          gpgcheck=1
+          gpgkey=https://download.copr.fedorainfracloud.org/results/lionheartp/Hyprland/pubkey.gpg
+          enabled=1
+          EOF
       - name: Repoclosure (newest)
         run: |
           set -eu
