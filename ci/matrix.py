@@ -102,7 +102,8 @@ def load_packages() -> dict[str, dict]:
     if not depths or depths[0] != 0:
         die(f"{PACKAGES_FILE}: batches must start at 0, got {depths}")
     # gaps are allowed — an intentionally empty dependency level (batch 4 is
-    # empty since onlyoffice moved to 3); waves with no members just skip
+    # empty); waves with no members just skip
+    _validate_batches(pkgs)
     return pkgs
 
 
@@ -176,6 +177,23 @@ def _resolve_token(token: str, registry: dict[str, str]) -> str | None:
     if lowered:
         return lowered
     return registry.get(name.lower().removesuffix("-devel"))
+
+
+def _validate_batches(pkgs: dict[str, dict]) -> None:
+    """Enforce that every package has batch >= 1 + batch of anything it BuildRequires."""
+    registry = {n: n for n in pkgs}
+    registry.update({n.lower(): n for n in pkgs})
+    for name, meta in pkgs.items():
+        batch = meta["batch"]
+        for token in meta["brs"]:
+            provider = _resolve_token(token, registry)
+            if provider and provider != name:
+                dep_batch = pkgs[provider]["batch"]
+                if batch <= dep_batch:
+                    die(
+                        f"batch violation: [{name}] (batch {batch}) BuildRequires "
+                        f"[{provider}] (batch {dep_batch}) -> must be >= {dep_batch + 1}"
+                    )
 
 
 def dependents_closure(pkgs: dict[str, dict], changed: set[str]) -> set[str]:

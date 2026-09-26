@@ -112,6 +112,8 @@ META_SPEC = """\
 {snapshot} — do not
 # edit by hand. The scheme-full catch-all: requires every group at this
 # snapshot's version (docs excluded by design; binaries pair from Fedora).
+%define debug_package %{{nil}}
+
 Name:           texlive-meta
 Version:        {snapshot}
 Release:        1%{{?dist}}

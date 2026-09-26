@@ -19,77 +19,65 @@ URL:            https://github.com/hyprwm/Hyprland
 Source0:        %{url}/releases/download/v%{version}/source-v%{version}.tar.gz
 Source4:        macros.hyprland
 
-%{lua:
-hyprdeps = {
-    "cmake",
-    "gcc-c++",
-    "meson",
-    "muParser-devel",
-    "glaze-static",
-    "pkgconfig(aquamarine)",
-    "pkgconfig(cairo)",
-    "pkgconfig(egl)",
-    "pkgconfig(gbm)",
-    "pkgconfig(gio-2.0)",
-    "pkgconfig(glesv2)",
-    "pkgconfig(glslang)",
-    "pkgconfig(hwdata)",
-    "pkgconfig(hyprcursor)",
-    "pkgconfig(hyprgraphics)",
-    "pkgconfig(hyprlang)",
-    "pkgconfig(hyprutils)",
-    "pkgconfig(hyprwayland-scanner)",
-    "pkgconfig(hyprwire)",
-    "pkgconfig(lcms2)",
-    "pkgconfig(libcanberra)",
-    "pkgconfig(libdisplay-info)",
-    "pkgconfig(libdrm)",
-    "pkgconfig(libeis-1.0)",
-    "pkgconfig(libinput) >= 1.28",
-    "pkgconfig(libliftoff)",
-    "pkgconfig(libseat)",
-    "pkgconfig(libudev)",
-    "pkgconfig(lua)",
-    "pkgconfig(pango)",
-    "pkgconfig(pangocairo)",
-    "pkgconfig(pixman-1)",
-    "pkgconfig(re2)",
-    "pkgconfig(readline)",
-    "pkgconfig(sdbus-c++)",
-    "pkgconfig(systemd)",
-    "pkgconfig(tomlplusplus)",
-    "pkgconfig(uuid)",
-    "pkgconfig(wayland-client)",
-    "pkgconfig(wayland-protocols) >= 1.45",
-    "pkgconfig(wayland-scanner)",
-    "pkgconfig(wayland-server)",
-    "pkgconfig(xcb-composite)",
-    "pkgconfig(xcb-dri3)",
-    "pkgconfig(xcb-errors)",
-    "pkgconfig(xcb-ewmh)",
-    "pkgconfig(xcb-icccm)",
-    "pkgconfig(xcb-present)",
-    "pkgconfig(xcb-render)",
-    "pkgconfig(xcb-renderutil)",
-    "pkgconfig(xcb-res)",
-    "pkgconfig(xcb-shm)",
-    "pkgconfig(xcb-util)",
-    "pkgconfig(xcb-xfixes)",
-    "pkgconfig(xcb-xinput)",
-    "pkgconfig(xcb)",
-    "pkgconfig(xcursor)",
-    "pkgconfig(xkbcommon)",
-    "pkgconfig(xwayland)",
-    }
-}
-
-%define printbdeps(r) %{lua:
-for _, dep in ipairs(hyprdeps) do
-    print((rpm.expand("%{-r}") ~= "" and "Requires: " or "BuildRequires: ")..dep.."\\n")
-end
-}
-
-%printbdeps
+BuildRequires:  cmake
+BuildRequires:  gcc-c++
+BuildRequires:  meson
+BuildRequires:  muParser-devel
+BuildRequires:  glaze-static
+BuildRequires:  pkgconfig(aquamarine)
+BuildRequires:  pkgconfig(cairo)
+BuildRequires:  pkgconfig(egl)
+BuildRequires:  pkgconfig(gbm)
+BuildRequires:  pkgconfig(gio-2.0)
+BuildRequires:  pkgconfig(glesv2)
+BuildRequires:  pkgconfig(glslang)
+BuildRequires:  pkgconfig(hwdata)
+BuildRequires:  pkgconfig(hyprcursor)
+BuildRequires:  pkgconfig(hyprgraphics)
+BuildRequires:  pkgconfig(hyprlang)
+BuildRequires:  pkgconfig(hyprutils)
+BuildRequires:  pkgconfig(hyprwayland-scanner)
+BuildRequires:  pkgconfig(hyprwire)
+BuildRequires:  pkgconfig(lcms2)
+BuildRequires:  pkgconfig(libcanberra)
+BuildRequires:  pkgconfig(libdisplay-info)
+BuildRequires:  pkgconfig(libdrm)
+BuildRequires:  pkgconfig(libeis-1.0)
+BuildRequires:  pkgconfig(libinput) >= 1.28
+BuildRequires:  pkgconfig(libliftoff)
+BuildRequires:  pkgconfig(libseat)
+BuildRequires:  pkgconfig(libudev)
+BuildRequires:  pkgconfig(lua)
+BuildRequires:  pkgconfig(pango)
+BuildRequires:  pkgconfig(pangocairo)
+BuildRequires:  pkgconfig(pixman-1)
+BuildRequires:  pkgconfig(re2)
+BuildRequires:  pkgconfig(readline)
+BuildRequires:  pkgconfig(sdbus-c++)
+BuildRequires:  pkgconfig(systemd)
+BuildRequires:  pkgconfig(tomlplusplus)
+BuildRequires:  pkgconfig(uuid)
+BuildRequires:  pkgconfig(wayland-client)
+BuildRequires:  pkgconfig(wayland-protocols) >= 1.45
+BuildRequires:  pkgconfig(wayland-scanner)
+BuildRequires:  pkgconfig(wayland-server)
+BuildRequires:  pkgconfig(xcb-composite)
+BuildRequires:  pkgconfig(xcb-dri3)
+BuildRequires:  pkgconfig(xcb-errors)
+BuildRequires:  pkgconfig(xcb-ewmh)
+BuildRequires:  pkgconfig(xcb-icccm)
+BuildRequires:  pkgconfig(xcb-present)
+BuildRequires:  pkgconfig(xcb-render)
+BuildRequires:  pkgconfig(xcb-renderutil)
+BuildRequires:  pkgconfig(xcb-res)
+BuildRequires:  pkgconfig(xcb-shm)
+BuildRequires:  pkgconfig(xcb-util)
+BuildRequires:  pkgconfig(xcb-xfixes)
+BuildRequires:  pkgconfig(xcb-xinput)
+BuildRequires:  pkgconfig(xcb)
+BuildRequires:  pkgconfig(xcursor)
+BuildRequires:  pkgconfig(xkbcommon)
+BuildRequires:  pkgconfig(xwayland)
 
 %if 0%{?rhel} == 10
 BuildRequires:  gcc-toolset-15
@@ -99,7 +87,7 @@ BuildRequires:  gcc-toolset-15-annobin-plugin-gcc
 
 # udis86 is packaged in Fedora, but the copy bundled here is actually a
 # modified fork.
-Provides:       bundled(udis86) = 1.7.2^1.%{udis86_shortcommit}
+Provides:       bundled(udis86) = 1.7.2
 
 Requires:       xorg-x11-server-Xwayland%{?_isa}
 Requires:       aquamarine%{?_isa} >= 0.9.2
@@ -168,8 +156,15 @@ elseif string.match(rpm.expand('%{name}'), 'hyprland$') then
     print('Obsoletes: hyprland-legacyrenderer-devel < 0.49.0'..'\n')
 end
 end}
-%printbdeps -r
 Requires:       git-core
+Requires:       pkgconfig(aquamarine)
+Requires:       pkgconfig(cairo)
+Requires:       pkgconfig(hyprcursor)
+Requires:       pkgconfig(hyprgraphics)
+Requires:       pkgconfig(hyprlang)
+Requires:       pkgconfig(hyprutils)
+Requires:       pkgconfig(pixman-1)
+Requires:       pkgconfig(wayland-client)
 Requires:       pkgconfig(xkbcommon)
 
 %description    devel

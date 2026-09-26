@@ -22,13 +22,14 @@
 #   feed = "github-release"  + repo = "owner/name"   latest GitHub release tag
 #   feed = "github-tag"      + repo = "owner/name"   newest git tag
 #   feed = "custom"          + custom = "<name>"     ci/sweep/custom.py function
-# Packages without it (texlive-texmf) are never swept.
+# Packages without it (texlive rolling groups) are never swept.
 #
-# batch 0  roots: Fedora-only build deps (plus the wrapper/binary packages)
-# batch 1  first level: everything that links against batch 0
-# batch 2  hyprland, hyprtoolkit — links against batch 0 and batch 1
-# batch 3  the hyprtoolkit dependents (guiutils/pwcenter/shutdown)
-# batch 4  texlive-texmf + onlyoffice — the heavy wave
+# batch 0  roots: Fedora-only build deps and leaf tools/apps/wrappers
+# batch 1  first level: hyprlang, aquamarine, hyprgraphics, hyprwire, noctalia-greeter-git
+# batch 2  second level: hyprcursor, hyprland-qt-support, xdg-desktop-portal-hyprland, hyprtoolkit
+# batch 3  third level: hyprland, hyprland-guiutils, hyprpwcenter, hyprshutdown, noctalia, onlyoffice-desktopeditors
+# batch 4  intentionally empty
+# batch 5  texlive rolling groups (40 generated packages)
 
 # --------------------------------------------------------------- desktops
 
@@ -39,13 +40,6 @@ batch = 0
 [hyprutils.updates]
 feed = "github-release"
 repo = "hyprwm/hyprutils"
-
-[hyprlang]
-batch = 0
-
-[hyprlang.updates]
-feed = "github-release"
-repo = "hyprwm/hyprlang"
 
 [hyprwayland-scanner]
 batch = 0
@@ -70,14 +64,23 @@ batch = 0
 feed = "github-release"
 repo = "stephenberry/glaze"
 
+# pyprland: Hyprland companion daemon (hatchling wheel + compiled C client,
+# per the AUR PKGBUILD); version sweeps the git tags.
+[pyprland]
+batch = 0
+
+[pyprland.updates]
+feed = "github-tag"
+repo = "hyprland-community/pyprland"
+
 # --- batch 1 ------------------------------------------------------------
-# hyprland-qt-support needs hyprlang, so it cannot share hyprlang's batch.
-[hyprland-qt-support]
+# hyprlang needs hyprutils (batch 0), so it sits in batch 1.
+[hyprlang]
 batch = 1
 
-[hyprland-qt-support.updates]
+[hyprlang.updates]
 feed = "github-release"
-repo = "hyprwm/hyprland-qt-support"
+repo = "hyprwm/hyprlang"
 
 [aquamarine]
 batch = 1
@@ -85,13 +88,6 @@ batch = 1
 [aquamarine.updates]
 feed = "github-release"
 repo = "hyprwm/aquamarine"
-
-[hyprcursor]
-batch = 1
-
-[hyprcursor.updates]
-feed = "github-release"
-repo = "hyprwm/hyprcursor"
 
 [hyprgraphics]
 batch = 1
@@ -108,13 +104,7 @@ batch = 1
 feed = "github-release"
 repo = "hyprwm/hyprwire"
 
-# noctalia: the desktop shell itself, release-tracked (upstream keeps no
-# stable branch; releases are cut from main). Recipe from Terra's
-# noctalia-nightly. The greeter is standalone (all build deps are Fedora 44;
-# wlroots ships in Fedora proper) and builds from the branch tip like hyprland
-[noctalia]
-batch = 3
-
+# noctalia-greeter: standalone greeter (all build deps in Fedora 44).
 [noctalia-greeter-git]
 batch = 1
 
@@ -122,34 +112,33 @@ batch = 1
 feed = "custom"
 custom = "noctalia-greeter-git"
 
+# --- batch 2 ------------------------------------------------------------
+# hyprcursor needs hyprlang (batch 1).
+[hyprcursor]
+batch = 2
+
+[hyprcursor.updates]
+feed = "github-release"
+repo = "hyprwm/hyprcursor"
+
+# hyprland-qt-support needs hyprlang (batch 1).
+[hyprland-qt-support]
+batch = 2
+
+[hyprland-qt-support.updates]
+feed = "github-release"
+repo = "hyprwm/hyprland-qt-support"
+
+# xdg-desktop-portal-hyprland needs hyprlang (batch 1) + batch 0 protocols/utils.
 [xdg-desktop-portal-hyprland]
-batch = 1
+batch = 2
 
 [xdg-desktop-portal-hyprland.updates]
 feed = "custom"
 custom = "xdg-desktop-portal-hyprland"
 
-# pyprland: Hyprland companion daemon (hatchling wheel + compiled C client,
-# per the AUR PKGBUILD); version sweeps the git tags.
-[pyprland]
-batch = 0
-
-[pyprland.updates]
-feed = "github-tag"
-repo = "hyprland-community/pyprland"
-
-# --- batch 2 ------------------------------------------------------------
-# hyprland: git snapshot (main-branch pin), the ~15-minute one. Needs
-# glaze (batch 0) and hyprwire (batch 1) from this repo.
-[hyprland]
-batch = 2
-
-[hyprland.updates]
-feed = "custom"
-custom = "hyprland"
-
-# hyprtoolkit: the GUI toolkit for guiutils/pwcenter/shutdown (needs
-# aquamarine + hyprgraphics from batch 1).
+# hyprtoolkit: GUI toolkit for guiutils/pwcenter/shutdown (needs
+# aquamarine + hyprgraphics + hyprlang from batch 1).
 [hyprtoolkit]
 batch = 2
 
@@ -158,7 +147,19 @@ feed = "github-release"
 repo = "hyprwm/hyprtoolkit"
 
 # --- batch 3 ------------------------------------------------------------
-# the hyprtoolkit dependents: hyprtoolkit is batch 2, these must wait for
+# hyprland: needs glaze (batch 0), hyprwire (batch 1), hyprcursor (batch 2).
+[hyprland]
+batch = 3
+
+[hyprland.updates]
+feed = "custom"
+custom = "hyprland"
+
+# noctalia: the desktop shell itself, release-tracked.
+[noctalia]
+batch = 3
+
+# the hyprtoolkit dependents: hyprtoolkit is batch 2, these wait for
 # it to publish.
 [hyprland-guiutils]
 batch = 3
