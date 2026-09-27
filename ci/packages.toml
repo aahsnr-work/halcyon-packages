@@ -27,7 +27,7 @@
 # batch 0  roots: Fedora-only build deps and leaf tools/apps/wrappers
 # batch 1  first level: hyprlang, aquamarine, hyprgraphics, hyprwire, noctalia-greeter-git
 # batch 2  second level: hyprcursor, hyprland-qt-support, xdg-desktop-portal-hyprland, hyprtoolkit
-# batch 3  third level: hyprland-git, hyprland-guiutils, hyprpwcenter, hyprshutdown, noctalia-git, onlyoffice-desktopeditors
+# batch 3  third level: hyprland-git, hyprland-guiutils, hyprpwcenter, hyprshutdown, kernel-p03, noctalia-git, onlyoffice-desktopeditors
 # batch 4  intentionally empty
 # batch 5  texlive rolling groups (40 generated packages)
 
@@ -553,6 +553,17 @@ batch = 3
 [onlyoffice-desktopeditors.updates]
 feed = "github-release"
 repo = "ONLYOFFICE/DesktopEditors"
+
+# kernel-p03: custom Linux kernel with Firelzrd, CachyOS, TKG, XanMod patches
+# and open-gpu-kernel-modules (upstream: CatPieLeaf/linux-p03). Builds on
+# Fedora 44 with clang + ThinLTO + x86-64-v3 + polly + mimalloc. Heavy build
+# (~1.5-2h) sitting in batch 3 alongside onlyoffice-desktopeditors.
+[kernel-p03]
+batch = 3
+
+[kernel-p03.updates]
+feed = "custom"
+custom = "kernel-p03"
 
 # texlive rolling groups (batch 5): generated specs owned by the
 # biweekly texlive roll (.github/workflows/texlive-update.yml);

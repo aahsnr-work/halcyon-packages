@@ -1,6 +1,6 @@
 # AGENTS.md
 
-RPM package monorepo: 59 hand-maintained packages plus the 40 generated
+RPM package monorepo: 60 hand-maintained packages plus the 40 generated
 `texlive-*` rolling groups (39 Arch-style collection-group specs +
 `texlive-meta`, regenerated per tlnet snapshot — see `tools/texlive-splitter/`),
 built on **Fedora Copr**
@@ -68,7 +68,8 @@ mock -r /tmp/copr.cfg <srpm>
   submits wave-by-wave and waits between waves — each successful build is
   immediately visible to the project repo, which is how batch N+1 installs
   batch N's output as BuildRequires. **Batch 3 = noctalia-git +
-  onlyoffice-desktopeditors (+ hyprland-git and the hyprtoolkit GUI apps); batch 4 is
+  onlyoffice-desktopeditors + kernel-p03 (+ hyprland-git and the
+  hyprtoolkit GUI apps); batch 4 is
   intentionally empty; batch 5 = the 40 texlive rolling groups** (gaps in
   the batch sequence are allowed; empty waves just skip).
 - **Spec conventions** (terra-style, differ from Fedora defaults):
@@ -154,7 +155,9 @@ mock -r /tmp/copr.cfg <srpm>
   file written only on content change). Custom feeds live in
   `ci/sweep/custom.py` (custom feeds include `noctalia-greeter-git`,
   `noctalia-git`, and `hyprland-git` git-snapshot trackers with `bumpver`/`^N`
-  counter semantics). Default mode commits bumps
+  counter semantics, `zotero` which only lands on tags whose linux tarball
+  is actually published, and `kernel-p03` which lifts its NVR pins from
+  upstream's own spec at the release tag). Default mode commits bumps
   straight to main (self-healing: a failed build leaves the published
   version untouched); set the `UPDATE_MODE` repo variable to `pr` for a
   review gate. The old `anda update` equivalence harness (verify.py) is

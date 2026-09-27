@@ -53,7 +53,7 @@ flowchart LR
         B0["batch 0 — 44<br/>foundations + CLI tools"]
         B1["batch 1 — 5<br/>hyprwm libs"]
         B2["batch 2 — 4<br/>cursor · toolkit · portal"]
-        B3["batch 3 — 6<br/>hyprland-git · noctalia-git · onlyoffice"]
+        B3["batch 3 — 7<br/>hyprland-git · noctalia-git · onlyoffice · kernel-p03"]
         B5["batch 5 — 40<br/>texlive rolling groups"]
     end
     EXT --> B0
@@ -69,12 +69,12 @@ flowchart LR
 | **0** (44) | hyprwm foundations (`hyprutils`, `hyprlang`, `hyprwayland-scanner`, `hyprland-protocols`, `glaze`) · rust CLI tools (`atuin`, `bat`, `dust`, `eza`, `starship`, `tealdeer`, `texlab`, `yazi`, `zellij`, `zoxide`, `fd-find`, `cliphist`) · vendor apps (`bun`, `bitwarden`, `obsidian`, `opencode`, `opencode-desktop`, `pixi`, `uv`, `ticktick`, `zotero`, `marksman`, `lazygit`, `pandoc`, `ferdium`, `antigravity-ide`, `antigravity-cli`) · source builds (`fzf`, `fzy`, `kilo`, `nwg-displays`) · `cava`, `chafa`, `gnuplot`, `kitty`, `distroshelf`, `nwg-look`, `qt6ct`, `pyprland`, `xwiimote-ng` |
 | **1** (5) | `aquamarine`, `hyprgraphics`, `hyprlang`, `hyprwire`, `noctalia-greeter-git` |
 | **2** (4) | `hyprcursor`, `hyprland-qt-support`, `hyprtoolkit`, `xdg-desktop-portal-hyprland` |
-| **3** (6) | `hyprland-git`, `hyprland-guiutils`, `hyprpwcenter`, `hyprshutdown`, `noctalia-git`, `onlyoffice-desktopeditors` |
+| **3** (7) | `hyprland-git`, `hyprland-guiutils`, `hyprpwcenter`, `hyprshutdown`, `noctalia-git`, `onlyoffice-desktopeditors`, `kernel-p03` |
 | **4** | *intentionally empty* |
 | **5** (40) | the `texlive-*` rolling groups + `texlive-meta` — Fedora-only inputs, isolated last |
 
-`onlyoffice-desktopeditors` sits in batch 3 by maintainer choice, not
-dependency; `texlive-meta` installs the whole scheme.
+`onlyoffice-desktopeditors` and `kernel-p03` sit in batch 3 by maintainer
+choice, not dependency; `texlive-meta` installs the whole scheme.
 
 ## Automation
 

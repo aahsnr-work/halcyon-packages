@@ -340,6 +340,64 @@ def custom_opencode_desktop(spec: SpecFile, pkg_dir: Path) -> None:
     spec.set_version(feeds.find_group(r"/files/bin/([0-9.]+)/", location))
 
 
+def custom_kernel_p03(spec: SpecFile, pkg_dir: Path) -> None:
+    # kernel-p03 tracks the latest GitHub release tag of CatPieLeaf/linux-p03.
+    # Each release bumps _tag_ver (e.g. p03.32), and typically also updates
+    # _koji_nvr (the Fedora Koji kernel NVR to build against), _suse_nvr
+    # (the openSUSE equivalent), and _nv_ver (the NVIDIA open-gpu-kernel-modules
+    # version). Rather than guessing these from the tag alone, we fetch upstream's
+    # own specfile at the release ref and lift the values from it directly — the
+    # same three globals that Copr used when the upstream Copr project succeeded.
+    repo = "CatPieLeaf/linux-p03"
+    new_tag = feeds.github_release_tag(repo)
+    if not new_tag:
+        raise feeds.FeedError("kernel-p03: no release found upstream")
+
+    old_tag = spec.get_global("_tag_ver") or ""
+    if old_tag == new_tag:
+        return
+
+    # Fetch upstream's specfile at the new release tag to extract the NVR pins.
+    upstream_spec_url = (
+        f"https://raw.githubusercontent.com/{repo}/refs/tags/{new_tag}"
+        "/sources/kernel-p03/kernel-p03.spec"
+    )
+    upstream_text = feeds.fetch_text(upstream_spec_url)
+
+    m_koji = re.search(r"(?m)^%(?:global|define)[ \t]+_koji_nvr[ \t]+(\S+)", upstream_text)
+    m_suse = re.search(r"(?m)^%(?:global|define)[ \t]+_suse_nvr[ \t]+(\S+)", upstream_text)
+    m_nv   = re.search(r"(?m)^%(?:global|define)[ \t]+_nv_ver[ \t]+(\S+)", upstream_text)
+    if not m_koji:
+        raise feeds.FeedError(
+            f"kernel-p03: could not parse _koji_nvr from upstream spec at {new_tag}")
+
+    new_koji = m_koji.group(1)
+    # Derive the RPM version: kernel-7.2.6-300.fc45 -> 7.2.6
+    kver_m = re.search(r"^kernel-([0-9]+\.[0-9]+\.[0-9]+)", new_koji)
+    if not kver_m:
+        raise feeds.FeedError(
+            f"kernel-p03: unexpected _koji_nvr format: {new_koji!r}")
+    new_kver = kver_m.group(1)
+
+    # Extract build number from new_tag (p03.N -> N)
+    buildnum_m = re.search(r"^p03\.(\d+)$", new_tag)
+    if not buildnum_m:
+        raise feeds.FeedError(
+            f"kernel-p03: unexpected tag format: {new_tag!r}")
+
+    # Update the three NVR globals first (before set_version resets Release)
+    spec.set_global("_tag_ver",  new_tag)
+    spec.set_global("_koji_nvr", new_koji)
+    if m_suse:
+        spec.set_global("_suse_nvr", m_suse.group(1))
+    if m_nv:
+        spec.set_global("_nv_ver", m_nv.group(1))
+
+    # The RPM version is <kver>.p03.<N>; set_version drives the Release reset.
+    new_version = f"{new_kver}.p03.{buildnum_m.group(1)}"
+    spec.set_version(new_version)
+
+
 def custom_qt6ct(spec: SpecFile, pkg_dir: Path) -> None:
     # GitLab releases of opencode.net/trialuser/qt6ct (the canonical repo; the
     # GitHub mirror lags behind). The spec pins the release commit: the

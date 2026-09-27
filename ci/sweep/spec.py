@@ -12,6 +12,7 @@ semantics (verified against `anda update` on the real specs, 2026-09-25):
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 _VALUE = r"[^\s]+"  # spec preamble values are single tokens (no spaces)
@@ -44,7 +45,21 @@ class SpecFile:
         m = re.search(rf"(?m)^Version:[ \t]*({_VALUE})", self.text)
         if not m:
             raise SpecError(f"{self.path}: no Version: line")
-        return m.group(1)
+        val = m.group(1)
+        if val.startswith("%"):
+            try:
+                proc = subprocess.run(
+                    ["rpmspec", "-D", "fedora 44", "-q", "--qf", "%{version}\\n", str(self.path)],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                first_line = proc.stdout.strip().splitlines()
+                if first_line:
+                    return first_line[0].strip()
+            except Exception:
+                pass
+        return val
 
     def set_version(self, version: str, reset_release: bool = True) -> bool:
         """rpm.version() port: strip a leading `v`, rewrite the Version value,
