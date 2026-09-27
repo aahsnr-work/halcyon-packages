@@ -14,7 +14,7 @@
 
 Name:           hyprland-git
 Version:        0.56.2%{?bumpver:^%{bumpver}.git%{hyprland_shortcommit}}
-Release:        1%{?dist}
+Release:        2%{?dist}
 %define debug_package %{nil}
 Summary:        Dynamic tiling Wayland compositor that doesn't sacrifice on its looks
 
@@ -240,6 +240,19 @@ source /usr/lib/gcc-toolset/15-env.source
 %cmake_install
 install -Dpm644 %{SOURCE4} -t %{buildroot}%{_rpmconfigdir}/macros.d
 
+# upstream CMake installs the session target into lib64/systemd/user (its
+# LIBDIR default) — a directory systemd never searches on Fedora (Arch uses
+# plain lib, where the same install lands correctly) — move it to the real
+# user unit dir, or the target would sit dead in the filesystem
+mkdir -p %{buildroot}%{_userunitdir}
+mv %{buildroot}%{_libdir}/systemd/user/hyprland-session.target \
+    %{buildroot}%{_userunitdir}/hyprland-session.target
+
+# upstream's lowercase compat name for the binary is created as an absolute
+# symlink; rpm's file check rejects absolute symlinks inside one package —
+# recreate it relative (same directory)
+ln -sf Hyprland %{buildroot}%{_bindir}/hyprland
+
 %files
 %license LICENSE LICENSE-udis86 LICENSE-hyprland-protocols
 %{_bindir}/[Hh]yprland
@@ -249,6 +262,7 @@ install -Dpm644 %{SOURCE4} -t %{buildroot}%{_rpmconfigdir}/macros.d
 %{_datadir}/hypr/
 %{_datadir}/wayland-sessions/hyprland.desktop
 %{_datadir}/xdg-desktop-portal/hyprland-portals.conf
+%{_userunitdir}/hyprland-session.target
 %{_mandir}/man1/hyprctl.1*
 %{_mandir}/man1/Hyprland.1*
 %{bash_completions_dir}/hypr*
@@ -265,6 +279,11 @@ install -Dpm644 %{SOURCE4} -t %{buildroot}%{_rpmconfigdir}/macros.d
 
 
 %changelog
+* Sun Sep 27 2026 ahsan <aahsnr041@proton.me> - 0.56.2^64.git9a1ea29-2
+- fix the Copr check-files failures: claim hyprland-session.target (upstream
+  CMake installs it under lib64/systemd/user, which systemd never searches on
+  Fedora — moved to the user unit dir) and make the lowercase hyprland
+  compat symlink relative (rpm rejects absolute symlinks inside one package)
 * Sun Sep 27 2026 halcyon-autoupdate <aahsnr041@proton.me> - 0.56.2^64.git9a1ea29-1
 - switch to hyprland-git snapshot tracking main branch
 * Wed Sep 23 2026 halcyon-autobump <aahsnr041@proton.me>
