@@ -1,8 +1,19 @@
-# release-only tracking: Version is the newest upstream release tag (the
-# sweeper's custom feed bumps it); the official source-vX.Y.Z.tar.gz
-# release asset bundles all subprojects, so there are no submodule pins
-Name:           hyprland
-Version:	0.56.2
+%global hyprland_commit 9a1ea29274f0ba7c771d6c7b4195c5c4d7efe7a4
+%global hyprland_shortcommit %(c=%{hyprland_commit}; echo ${c:0:7})
+%global bumpver 64
+%global commits_count 7833
+%global commit_date Sat Sep 26 14:00:21 2026
+
+%global protocols_commit cc9a8fd253bdc00f48a967ecf4828211ef08751f
+%global protocols_shortcommit %(c=%{protocols_commit}; echo ${c:0:7})
+
+%global udis86_commit 5336633af70f3917760a6d441ff02d93477b0c86
+%global udis86_shortcommit %(c=%{udis86_commit}; echo ${c:0:7})
+
+%global libxkbcommon_version 1.11.0
+
+Name:           hyprland-git
+Version:        0.56.2%{?bumpver:^%{bumpver}.git%{hyprland_shortcommit}}
 Release:        1%{?dist}
 %define debug_package %{nil}
 Summary:        Dynamic tiling Wayland compositor that doesn't sacrifice on its looks
@@ -16,7 +27,9 @@ Summary:        Dynamic tiling Wayland compositor that doesn't sacrifice on its 
 # protocols/idle.xml: LGPL-2.1-or-later
 License:        BSD-3-Clause AND BSD-2-Clause AND HPND-sell-variant AND LGPL-2.1-or-later
 URL:            https://github.com/hyprwm/Hyprland
-Source0:        %{url}/releases/download/v%{version}/source-v%{version}.tar.gz
+Source0:        %{url}/archive/%{hyprland_commit}/%{name}-%{hyprland_shortcommit}.tar.gz
+Source2:        https://github.com/hyprwm/hyprland-protocols/archive/%{protocols_commit}/protocols-%{protocols_shortcommit}.tar.gz
+Source3:        https://github.com/canihavesomecoffee/udis86/archive/%{udis86_commit}/udis86-%{udis86_shortcommit}.tar.gz
 Source4:        macros.hyprland
 
 BuildRequires:  cmake
@@ -90,7 +103,7 @@ BuildRequires:  gcc-toolset-15-annobin-plugin-gcc
 
 # udis86 is packaged in Fedora, but the copy bundled here is actually a
 # modified fork.
-Provides:       bundled(udis86) = 1.7.2
+Provides:       bundled(udis86) = 1.7.2^1.%{udis86_shortcommit}
 
 Requires:       xorg-x11-server-Xwayland%{?_isa}
 Requires:       aquamarine%{?_isa} >= 0.9.2
@@ -150,6 +163,7 @@ Requires:       %{name}%{?_isa} = %{version}-%{release}
 Requires:       cpio
 %{lua:do
 if string.match(rpm.expand('%{name}'), 'hyprland%-git$') then
+    print('Conflicts: hyprland-devel'..'\n')
     print('Obsoletes: hyprland-nvidia-git-devel < 0.32.3^30.gitad3f688-2'..'\n')
     print(rpm.expand('Provides: hyprland-nvidia-git-devel = %{version}-%{release}')..'\n')
     print('Obsoletes: hyprland-aquamarine-git-devel < 0.41.2^20.git4b84029-2'..'\n')
@@ -175,7 +189,7 @@ Requires:       pkgconfig(xkbcommon)
 
 
 %prep
-%autosetup -n hyprland-source -N
+%autosetup -n Hyprland-%{hyprland_commit} -N
 # Fedora names it lua.pc . The correct version is ensured in the BuildRequires section
 sed -i 's/lua55/lua/g' CMakeLists.txt
 %if 0%{?fedora} == 43
@@ -184,6 +198,16 @@ sed -i '/return (.* || std::ranges::starts_with(str_view, prefixes));/c\
     auto check = [&](auto prefix) { return std::string(str_view.begin(), str_view.end()).starts_with(prefix); };\
     return (... || check(prefixes));' src/helpers/MiscFunctions.cpp
 %endif
+
+tar -xf %{SOURCE2} -C subprojects/hyprland-protocols --strip=1
+tar -xf %{SOURCE3} -C subprojects/udis86 --strip=1
+sed -e '/GIT_COMMIT_HASH/s/unknown/%{hyprland_commit}/' \
+    -e '/GIT_BRANCH/s/unknown/main/' \
+    -e '/GIT_COMMIT_DATE/s/unknown/%{commit_date}/' \
+    -e '/GIT_TAG/s/unknown/%{lua:print((rpm.expand("%{version}"):gsub("[%^~].*", "")))}/' \
+    -e '/GIT_DIRTY/s/unknown/clean/' \
+    -e '/GIT_COMMITS/s/0/%{commits_count}/' \
+    -i CMakeLists.txt
 
 cp -p subprojects/hyprland-protocols/LICENSE LICENSE-hyprland-protocols
 cp -p subprojects/udis86/LICENSE LICENSE-udis86
@@ -225,8 +249,6 @@ install -Dpm644 %{SOURCE4} -t %{buildroot}%{_rpmconfigdir}/macros.d
 %{_datadir}/hypr/
 %{_datadir}/wayland-sessions/hyprland.desktop
 %{_datadir}/xdg-desktop-portal/hyprland-portals.conf
-# 0.56.2 installs no systemd user units (the session target was dropped
-# upstream; uwsm's wayland-sessions entry replaces it)
 %{_mandir}/man1/hyprctl.1*
 %{_mandir}/man1/Hyprland.1*
 %{bash_completions_dir}/hypr*
@@ -243,5 +265,7 @@ install -Dpm644 %{SOURCE4} -t %{buildroot}%{_rpmconfigdir}/macros.d
 
 
 %changelog
+* Sun Sep 27 2026 halcyon-autoupdate <aahsnr041@proton.me> - 0.56.2^64.git9a1ea29-1
+- switch to hyprland-git snapshot tracking main branch
 * Wed Sep 23 2026 halcyon-autobump <aahsnr041@proton.me>
 - converted to an explicit Release and changelog for the anda build

@@ -1,19 +1,18 @@
 # Noctalia desktop shell (v5, C++/meson — no quickshell runtime). Spec follows
-# terrapkg/packages' noctalia-nightly recipe, tracked at the latest upstream
-# RELEASE instead of the main-branch tip (the "stable" line: upstream cuts
-# releases from main and keeps no stable branch). The daily sweep bumps
-# Version on every upstream release.
+# terrapkg/packages' noctalia-nightly recipe, tracking main branch tip.
 %global debug_package   %{nil}
+%global commit          ffbe8d561fbf6f0a0f94f0096168e4d57506f8ed
+%global shortcommit     %(c=%{commit}; echo ${c:0:7})
 %global upstreamname    noctalia
 
-Name:   	noctalia
-Version:	5.1.0
+Name:   	noctalia-git
+Version:	5.1.0^119.%{shortcommit}
 Release:	1%{?dist}
 Summary:	A sleek, customizable desktop shell crafted for Wayland
 
 License:	MIT
 URL:		https://github.com/noctalia-dev/%{upstreamname}
-Source0:	%{url}/archive/refs/tags/v%{version}/%{upstreamname}-v%{version}.tar.gz
+Source0:	%{url}/archive/%{commit}/%{upstreamname}-%{commit}.tar.gz
 
 BuildRequires:  meson
 BuildRequires:  cmake
@@ -53,6 +52,7 @@ BuildRequires:  pkgconfig(sndfile)
 
 Provides:       desktop-notification-daemon
 Provides:       PolicyKit-authentication-agent
+Conflicts:      noctalia
 
 Requires:       hicolor-icon-theme
 Requires:       dejavu-sans-fonts
@@ -66,7 +66,7 @@ Recommends:     power-profiles-daemon
 A sleek, customizable desktop shell crafted for Wayland.
 
 %prep
-%autosetup -n %{upstreamname}-%{version}
+%autosetup -n %{upstreamname}-%{commit}
 
 # report the packaged version instead of meson's 'unknown' fallback
 sed -i "s/'unknown'/'v%{version}'/g" meson.build
@@ -99,6 +99,8 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/dev.noctalia.Noctalia
 %{_datadir}/icons/hicolor/scalable/apps/noctalia.svg
 
 %changelog
+* Sun Sep 27 2026 halcyon-autoupdate <aahsnr041@proton.me> - 5.1.0^119.ffbe8d5-1
+- switch to noctalia-git snapshot tracking main branch
 * Sat Sep 26 2026 halcyon-autoupdate <aahsnr041@proton.me> - 5.1.0-1
 - initial packaging, release-tracked (v5.1.0); recipe from Terra's
   noctalia-nightly (terrapkg/packages)

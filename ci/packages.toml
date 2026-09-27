@@ -27,7 +27,7 @@
 # batch 0  roots: Fedora-only build deps and leaf tools/apps/wrappers
 # batch 1  first level: hyprlang, aquamarine, hyprgraphics, hyprwire, noctalia-greeter-git
 # batch 2  second level: hyprcursor, hyprland-qt-support, xdg-desktop-portal-hyprland, hyprtoolkit
-# batch 3  third level: hyprland, hyprland-guiutils, hyprpwcenter, hyprshutdown, noctalia, onlyoffice-desktopeditors
+# batch 3  third level: hyprland-git, hyprland-guiutils, hyprpwcenter, hyprshutdown, noctalia-git, onlyoffice-desktopeditors
 # batch 4  intentionally empty
 # batch 5  texlive rolling groups (40 generated packages)
 
@@ -147,17 +147,21 @@ feed = "github-release"
 repo = "hyprwm/hyprtoolkit"
 
 # --- batch 3 ------------------------------------------------------------
-# hyprland: needs glaze (batch 0), hyprwire (batch 1), hyprcursor (batch 2).
-[hyprland]
+# hyprland-git: needs glaze (batch 0), hyprwire (batch 1), hyprcursor (batch 2).
+[hyprland-git]
 batch = 3
 
-[hyprland.updates]
+[hyprland-git.updates]
 feed = "custom"
-custom = "hyprland"
+custom = "hyprland-git"
 
-# noctalia: the desktop shell itself, release-tracked.
-[noctalia]
+# noctalia-git: the desktop shell itself, git-tracked.
+[noctalia-git]
 batch = 3
+
+[noctalia-git.updates]
+feed = "custom"
+custom = "noctalia-git"
 
 # the hyprtoolkit dependents: hyprtoolkit is batch 2, these wait for
 # it to publish.
@@ -309,10 +313,6 @@ batch = 0
 [cliphist.updates]
 feed = "github-release"
 repo = "sentriz/cliphist"
-
-[noctalia.updates]
-feed = "github-release"
-repo = "noctalia-dev/noctalia"
 
 
 [xwiimote-ng.updates]
@@ -542,7 +542,7 @@ custom = "qt6ct"
 # (39 collection groups + texlive-meta) owned by the texlive roll workflow
 # (.github/workflows/texlive-update.yml -> tools/texlive-splitter/roll.py),
 # no updates tables (the Monday sweep never touches them). onlyoffice and
-# noctalia sit in batch 3 (the heavy vendor rewrap and the shell); batch 4
+# noctalia-git sit in batch 3 (the heavy vendor rewrap and the shell); batch 4
 # is intentionally empty.
 [onlyoffice-desktopeditors]
 batch = 3

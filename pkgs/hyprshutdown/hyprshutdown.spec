@@ -19,7 +19,7 @@ BuildRequires: 	pkgconfig(pixman-1)
 BuildRequires: 	pkgconfig(wayland-client)
 BuildRequires: 	systemd-devel
 
-Requires:	hyprland
+Requires:	(hyprland or hyprland-git)
 Requires:	systemd
 
 %description

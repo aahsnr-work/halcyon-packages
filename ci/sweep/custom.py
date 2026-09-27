@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+import urllib.request
 from pathlib import Path
 
 import feeds
@@ -103,6 +104,92 @@ def custom_hyprland(spec: SpecFile, pkg_dir: Path) -> None:
     spec.set_version(tag.removeprefix("v"))
 
 
+def custom_hyprland_git(spec: SpecFile, pkg_dir: Path) -> None:
+    # hyprland-git tracks the hyprwm/Hyprland main-branch tip:
+    # records the commit, its commit date, total commit count, and
+    # the SHAs of the bundled hyprland-protocols and udis86 submodules.
+    # A new tag resets bumpver; any revision change bumps bumpver.
+    repo = "hyprwm/Hyprland"
+
+    old_commit = spec.get_global("hyprland_commit") or ""
+    new_commit = feeds.github_commit(repo)
+
+    proc = subprocess.run(
+        ["rpmspec", "-q", "--qf", "%{version}", str(pkg_dir / spec.path.name)],
+        check=True, capture_output=True, text=True, cwd=pkg_dir,
+    )
+    old_version = proc.stdout.strip()
+    old_base = re.sub(r"\^.*", "", old_version)
+
+    new_tag = feeds.github_latest_tag(repo) or old_base
+
+    protocols_data = feeds.fetch_json(
+        f"https://api.github.com/repos/{repo}/contents/subprojects/hyprland-protocols?ref={new_commit}"
+    )
+    new_protocols = protocols_data["sha"]
+    old_protocols = spec.get_global("protocols_commit") or ""
+
+    udis86_data = feeds.fetch_json(
+        f"https://api.github.com/repos/{repo}/contents/subprojects/udis86?ref={new_commit}"
+    )
+    new_udis86 = udis86_data["sha"]
+    old_udis86 = spec.get_global("udis86_commit") or ""
+
+    commit_data = feeds.fetch_json(
+        f"https://api.github.com/repos/{repo}/commits/{new_commit}"
+    )
+    date_str = commit_data["commit"]["author"]["date"]
+    date_proc = subprocess.run(
+        ["date", "-u", "-d", date_str, "+%a %b %d %T %Y"],
+        check=True, capture_output=True, text=True,
+    )
+    new_date = date_proc.stdout.strip()
+    old_date = spec.get_global("commit_date") or ""
+
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{repo}/commits?per_page=1&sha={new_commit}",
+        headers=feeds._headers_for("https://api.github.com"),
+    )
+    with feeds._open(req) as resp:
+        link_header = resp.headers.get("Link", "")
+    new_commits = feeds.find_group(r'page=(\d+)>;\s*rel="last"', link_header)
+
+    from vercmp import vercmp_rc
+    ec = vercmp_rc(old_version, new_tag)
+
+    bumpver_str = spec.get_global("bumpver") or "0"
+    bump = int(bumpver_str)
+
+    tag_changed = False
+    if ec == 12:
+        # new upstream tag: reset snapshot counter and update Version line
+        bump = 0
+        spec.set_global("bumpver", "0")
+        spec.text = re.sub(
+            r"(?m)^(Version:[ \t]*)[0-9.]+",
+            lambda m: f"{m.group(1)}{new_tag}",
+            spec.text,
+            count=1,
+        )
+        tag_changed = True
+
+    changed = (
+        old_commit != new_commit
+        or old_protocols != new_protocols
+        or old_udis86 != new_udis86
+        or old_date != new_date
+        or tag_changed
+    )
+
+    if changed:
+        spec.set_global("commits_count", new_commits)
+        spec.set_global("commit_date", new_date)
+        spec.set_global("hyprland_commit", new_commit)
+        spec.set_global("protocols_commit", new_protocols)
+        spec.set_global("udis86_commit", new_udis86)
+        spec.set_global("bumpver", str(bump + 1))
+
+
 def custom_kilo(spec: SpecFile, pkg_dir: Path) -> None:
     # the GitHub tag space is polluted by jetbrains/* tags; the npm dist-tag
     # is the channel the CLI's own updater follows
@@ -124,6 +211,42 @@ def custom_noctalia_greeter_git(spec: SpecFile, pkg_dir: Path) -> None:
     # base with a ^N snapshot counter — a new commit under the same tag bumps
     # the counter, a new tag resets it. The Release: line is left alone.
     repo = "noctalia-dev/noctalia-greeter"
+    old_commit = feeds.find_group(
+        r"(?m)^%global[ \t]+commit[ \t]+(\S+)", spec.text)
+    new_commit = feeds.github_commit(repo)
+    # old_version as rpmdev sees it (the Version line carries %{shortcommit})
+    proc = subprocess.run(
+        ["rpmspec", "-q", "--qf", "%{version}", str(pkg_dir / spec.path.name)],
+        check=True, capture_output=True, text=True, cwd=pkg_dir,
+    )
+    old_version = proc.stdout.strip()
+    old_base = re.sub(r"\^.*", "", old_version)
+    # the version base is unprefixed (github_latest_tag strips the v; the
+    # Sources carry commit SHAs so no URL is affected)
+    tag_raw = feeds.github_latest_tag(repo)
+    new_tag = old_base if not tag_raw else tag_raw.replace("-", "~")
+
+    from vercmp import vercmp_rc
+
+    ec = vercmp_rc(old_version, new_tag)
+    if old_commit != new_commit or ec == 12:
+        if ec == 12:
+            # newer tag: reset the snapshot counter
+            spec.set_snapshot_version(new_tag, None)
+        else:
+            # same version base: bump the snapshot counter
+            m = re.search(r"(?m)^Version:[ \t]*[^ \t]*\^(\d+)", spec.text)
+            counter = int(m.group(1)) + 1 if m else 1
+            spec.set_snapshot_version(old_base, counter)
+        spec.set_global("commit", new_commit)
+
+
+def custom_noctalia_git(spec: SpecFile, pkg_dir: Path) -> None:
+    # tracks the noctalia-dev/noctalia branch tip, not a release: the
+    # spec pins the commit in a %global and keeps the last tag as the version
+    # base with a ^N snapshot counter — a new commit under the same tag bumps
+    # the counter, a new tag resets it. The Release: line is left alone.
+    repo = "noctalia-dev/noctalia"
     old_commit = feeds.find_group(
         r"(?m)^%global[ \t]+commit[ \t]+(\S+)", spec.text)
     new_commit = feeds.github_commit(repo)

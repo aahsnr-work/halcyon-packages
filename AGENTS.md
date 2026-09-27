@@ -67,8 +67,8 @@ mock -r /tmp/copr.cfg <srpm>
   submit in parallel and must never depend on each other. `copr-build.yml`
   submits wave-by-wave and waits between waves — each successful build is
   immediately visible to the project repo, which is how batch N+1 installs
-  batch N's output as BuildRequires. **Batch 3 = noctalia +
-  onlyoffice-desktopeditors (+ the hyprtoolkit GUI apps); batch 4 is
+  batch N's output as BuildRequires. **Batch 3 = noctalia-git +
+  onlyoffice-desktopeditors (+ hyprland-git and the hyprtoolkit GUI apps); batch 4 is
   intentionally empty; batch 5 = the 40 texlive rolling groups** (gaps in
   the batch sequence are allowed; empty waves just skip).
 - **Spec conventions** (terra-style, differ from Fedora defaults):
@@ -152,9 +152,9 @@ mock -r /tmp/copr.cfg <srpm>
   specs with the exact old-anda semantics (Version + Release reset only on
   a real version change; `%global` rewrites preserve column formatting;
   file written only on content change). Custom feeds live in
-  `ci/sweep/custom.py` (10 feed logics; `noctalia-greeter-git` is the one
-  git-snapshot tracker with `bumpver`/`^N` counter semantics; `hyprland`
-  tracks the newest upstream RELEASE only). Default mode commits bumps
+  `ci/sweep/custom.py` (custom feeds include `noctalia-greeter-git`,
+  `noctalia-git`, and `hyprland-git` git-snapshot trackers with `bumpver`/`^N`
+  counter semantics). Default mode commits bumps
   straight to main (self-healing: a failed build leaves the published
   version untouched); set the `UPDATE_MODE` repo variable to `pr` for a
   review gate. The old `anda update` equivalence harness (verify.py) is
