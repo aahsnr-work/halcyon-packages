@@ -277,13 +277,16 @@ repo = "prefix-dev/pixi"
 # zotero follows terrapkg's spec (install layout, desktop file, icons,
 # appstream) over the OFFICIAL prebuilt tarball — the npm source build is
 # unbuildable today (its CI artifact S3 bucket 403s for current tags, see
-# the zotero.spec header). Version sweeps the zotero/zotero git tag.
+# the zotero.spec header). Version sweeps the zotero/zotero git tag but only
+# lands on tags whose linux tarball is actually published on
+# download.zotero.org — the 10.0.4 tag's tarball 403s upstream and killed the
+# 2026-09-27 batch-0 submit (custom_zotero in ci/sweep/custom.py).
 [zotero]
 batch = 0
 
 [zotero.updates]
-feed = "github-tag"
-repo = "zotero/zotero"
+feed = "custom"
+custom = "zotero"
 
 # xwiimote-ng is wired in but has never been through a validated build —
 # its first Copr build is the validation. Watch the first run.

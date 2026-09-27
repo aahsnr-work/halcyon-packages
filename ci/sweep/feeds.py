@@ -28,6 +28,7 @@ ALLOWED_HOSTS = frozenset({
     "raw.githubusercontent.com",
     "sourceforge.net",
     "aur.archlinux.org",
+    "download.zotero.org",
     "registry.npmjs.org",
     "opencode.ai",
     "www.opencode.net",
@@ -150,16 +151,11 @@ def _next_link(link: str) -> str:
     return ""
 
 
-def github_latest_tag(repo: str) -> str:
-    """gh_tag() port: the newest git tag (releases or not), leading `v`
-    stripped. Walks ALL pagination pages: zotero-class repos carry hundreds
-    of tags and GitHub's /tags ordering is not newest-first, so a single
-    page could miss the newest tag. The per-name v-strip before comparing
-    is not cosmetic: Hyprland's tag set mixes `v0.56.2` with an ancient
-    unprefixed `0.1.0-beta`, and rpmvercmp ranks a leading digit over a
-    leading letter — comparing raw names picks the prehistoric tag.
-    Empty when the repo has no tags — callers treat that as 'stay on the
-    current version base'."""
+def github_tag_names(repo: str) -> list[str]:
+    """Every tag name of `repo`, raw, across ALL pagination pages. Split out
+    of github_latest_tag so custom feeds can rank the full tag set — zotero-class
+    repos carry hundreds of tags and GitHub's /tags ordering is not
+    newest-first, so a single page could miss the newest tag."""
     names: list[str] = []
     url: str | None = f"{GITHUB_API}/repos/{repo}/tags?per_page=100"
     for _ in range(20):  # 20 pages = 2000 tags; no halcyon upstream goes near it
@@ -168,6 +164,18 @@ def github_latest_tag(repo: str) -> str:
         with _open(_get(url)) as resp:
             names.extend(t["name"] for t in json.loads(resp.read().decode()))
             url = _next_link(resp.headers.get("Link", ""))
+    return names
+
+
+def github_latest_tag(repo: str) -> str:
+    """gh_tag() port: the newest git tag (releases or not), leading `v`
+    stripped. The per-name v-strip before comparing is not cosmetic:
+    Hyprland's tag set mixes `v0.56.2` with an ancient unprefixed
+    `0.1.0-beta`, and rpmvercmp ranks a leading digit over a leading letter —
+    comparing raw names picks the prehistoric tag.
+    Empty when the repo has no tags — callers treat that as 'stay on the
+    current version base'."""
+    names = github_tag_names(repo)
     if not names:
         return ""
     from vercmp import rpmvercmp

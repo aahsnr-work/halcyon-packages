@@ -373,3 +373,45 @@ def custom_xdg_desktop_portal_hyprland(spec: SpecFile, pkg_dir: Path) -> None:
         "sdbus_version",
         feeds.github_release_tag("Kistler-Group/sdbus-cpp").removeprefix("v"),
     )
+
+
+def custom_zotero(spec: SpecFile, pkg_dir: Path) -> None:
+    # zotero's git tags can outrun its release artifacts: the 10.0.4 tag has
+    # no linux tarball on download.zotero.org (S3 answers 403 for the absent
+    # key) and the 2026-09-27 batch-0 submit died in spectool on exactly
+    # that. Version is the newest tag whose official linux tarball really
+    # downloads — probe newest-first with HEAD, skipping 403/404 (yanked or
+    # never-published) and erroring on anything else, so a dead network or a
+    # moved host never silently downgrades the package.
+    import urllib.error
+    from functools import cmp_to_key
+
+    from vercmp import rpmvercmp
+
+    versions = sorted(
+        {t.removeprefix("v") for t in feeds.github_tag_names("zotero/zotero")},
+        key=cmp_to_key(rpmvercmp),
+        reverse=True,
+    )
+    for version in versions:
+        url = (
+            "https://download.zotero.org/client/release/"
+            + version
+            + "/Zotero-"
+            + version
+            + "_linux-x86_64.tar.xz"
+        )
+        feeds.validate_url(url)
+        req = urllib.request.Request(
+            url, method="HEAD", headers=feeds._headers_for(url)
+        )
+        try:
+            feeds._open(req)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (403, 404):
+                continue
+            raise feeds.FeedError(
+                f"zotero: HTTP {exc.code} probing {url}") from exc
+        spec.set_version(version)
+        return
+    raise feeds.FeedError("zotero: no tag carries a published linux tarball")
