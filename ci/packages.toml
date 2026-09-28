@@ -317,6 +317,17 @@ batch = 0
 feed = "github-release"
 repo = "sentriz/cliphist"
 
+# topgrade: rust source build ported from li-lay/topgrade-watcher (their Copr
+# spec sweeps the same topgrade-rs/topgrade releases). Not in Fedora. The
+# github-release feed returns the raw v-tag; set_version strips it for both
+# the Version line and the crates.io Source URL.
+[topgrade]
+batch = 0
+
+[topgrade.updates]
+feed = "github-release"
+repo = "topgrade-rs/topgrade"
+
 
 [xwiimote-ng.updates]
 feed = "github-tag"
