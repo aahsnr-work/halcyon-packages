@@ -473,3 +473,44 @@ def custom_zotero(spec: SpecFile, pkg_dir: Path) -> None:
         spec.set_version(version)
         return
     raise feeds.FeedError("zotero: no tag carries a published linux tarball")
+
+
+def custom_emacs_pgtk(spec: SpecFile, pkg_dir: Path) -> None:
+    # GNU Emacs publishes on ftp.gnu.org only; the emacs-mirror/emacs GitHub
+    # mirror tags releases as emacs-<version> and pretests as
+    # emacs-<version>.<90+> (pretest tarballs land on alpha.gnu.org, not
+    # ftp.gnu.org). Rank the numeric tags newest-first and HEAD-probe the
+    # ftp.gnu.org tarball zotero-style so a pretest tag never bumps the spec.
+    import urllib.error
+    from functools import cmp_to_key
+
+    from vercmp import rpmvercmp
+
+    versions = sorted(
+        {
+            v
+            for v in (
+                t.removeprefix("emacs-")
+                for t in feeds.github_tag_names("emacs-mirror/emacs")
+            )
+            if re.fullmatch(r"[0-9][0-9.]*", v)
+        },
+        key=cmp_to_key(rpmvercmp),
+        reverse=True,
+    )
+    for version in versions:
+        url = f"https://ftp.gnu.org/gnu/emacs/emacs-{version}.tar.xz"
+        feeds.validate_url(url)
+        req = urllib.request.Request(
+            url, method="HEAD", headers=feeds._headers_for(url)
+        )
+        try:
+            feeds._open(req)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (403, 404):
+                continue
+            raise feeds.FeedError(
+                f"emacs-pgtk: HTTP {exc.code} probing {url}") from exc
+        spec.set_version(version)
+        return
+    raise feeds.FeedError("emacs-pgtk: no tag carries a published tarball")

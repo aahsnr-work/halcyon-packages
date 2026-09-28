@@ -29,6 +29,7 @@ ALLOWED_HOSTS = frozenset({
     "sourceforge.net",
     "aur.archlinux.org",
     "download.zotero.org",
+    "ftp.gnu.org",
     "registry.npmjs.org",
     "opencode.ai",
     "www.opencode.net",

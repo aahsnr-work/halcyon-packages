@@ -255,6 +255,18 @@ batch = 0
 feed = "github-release"
 repo = "kovidgoyal/kitty"
 
+# emacs-pgtk: GNU Emacs 31 pgtk source build from the ftp.gnu.org tarball
+# (aot native compilation + tree-sitter; heavy ~2h build). The generic
+# github-tag feed can't strip the "emacs-" tag prefix, so a custom feed
+# ranks the emacs-mirror/emacs tags and HEAD-probes the ftp.gnu.org tarball
+# (pretest tags' tarballs live on alpha.gnu.org and would 404 here).
+[emacs-pgtk]
+batch = 0
+
+[emacs-pgtk.updates]
+feed = "custom"
+custom = "emacs-pgtk"
+
 # cava: source build from the upstream release tarball (autotools, all
 # Fedora-available audio backends enabled).
 [cava]
@@ -575,6 +587,40 @@ batch = 3
 [kernel-p03.updates]
 feed = "custom"
 custom = "kernel-p03"
+
+# ------------------------------------------------------------- fonts
+# nerd-fonts-*: Nerd Fonts patched developer fonts (ported from the Terra
+# nerd-fonts spec, but one package per font family instead of Lua-generated
+# subpackages), all tracking the ryanoasis/nerd-fonts releases. The
+# symbols-only package additionally ships the upstream fontconfig fallback
+# rules.
+[nerd-fonts-jetbrainsmono]
+batch = 0
+
+[nerd-fonts-jetbrainsmono.updates]
+feed = "github-release"
+repo = "ryanoasis/nerd-fonts"
+
+[nerd-fonts-ubuntu]
+batch = 0
+
+[nerd-fonts-ubuntu.updates]
+feed = "github-release"
+repo = "ryanoasis/nerd-fonts"
+
+[nerd-fonts-ubuntu-mono]
+batch = 0
+
+[nerd-fonts-ubuntu-mono.updates]
+feed = "github-release"
+repo = "ryanoasis/nerd-fonts"
+
+[nerd-fonts-symbols-only]
+batch = 0
+
+[nerd-fonts-symbols-only.updates]
+feed = "github-release"
+repo = "ryanoasis/nerd-fonts"
 
 # texlive rolling groups (batch 5): generated specs owned by the
 # biweekly texlive roll (.github/workflows/texlive-update.yml);
