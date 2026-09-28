@@ -13,6 +13,21 @@
 # what consumers see. --newest resolves against the newest packages only;
 # the second step adds --best (stricter: prefers the best candidate across
 # repos instead of failing over).
+#
+# Two ways this check can sample a half-published repo, both handled below
+# instead of by blind retries:
+#   1. A cascade publishes builds one by one and Copr regenerates the repo
+#      metadata after each — a sample taken while a copr-build run is
+#      queued/in flight sees stale-vs-new version skew (a texlive group
+#      requiring texlive-latex = <snapshot> before latex's own build
+#      lands). The run skips entirely while a cascade is in flight.
+#   2. Copr can leave the SERVED repodata behind the published packages for
+#      hours once a cascade ends — observed 2026-09-28: four texlive
+#      groups were published by 09:00Z but absent from the repodata until
+#      the next cascade's builds forced a regen at 15:55Z (no builds ran
+#      in between, so nothing else triggered one). copr-cli
+#      regenerate-repos forces the rebuild, so every failed attempt is
+#      followed by a forced regen before retrying.
 name: repoclosure
 
 on:
@@ -26,6 +41,7 @@ on:
 
 permissions:
   contents: read
+  actions: read # the in-flight-cascade gate lists copr-build runs
 
 concurrency:
   group: repoclosure
@@ -67,15 +83,43 @@ jobs:
           gpgkey=https://download.copr.fedorainfracloud.org/results/lionheartp/Hyprland/pubkey.gpg
           enabled=1
           EOF
-      # A cascade makes each successful build visible to the repo the moment
-      # it lands, and two cascades can overlap (a quick batch-0 push finishing
-      # while the texlive roll's wave 5 is still publishing) — a check that
-      # samples the repo mid-publish sees stale-vs-new version skew. Retry
-      # with a wait instead of failing on the window.
-      - name: Repoclosure (newest, then newest+best)
+      - name: Copr credentials
+        env:
+          COPR_CLICONF: ${{ secrets.COPR_CLICONF }}
+        run: |
+          set -eu
+          mkdir -p ~/.config
+          printf '%s\n' "$COPR_CLICONF" > ~/.config/copr
+          chmod 600 ~/.config/copr
+      - name: Install copr-cli
+        run: dnf -qy install copr-cli
+      - name: Repoclosure (newest, then newest+best; regenerate-and-retry on failure)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COPR_PROJECT: aahsnr-work/halcyon
         run: |
           set -u
-          attempt=0; max=3
+          in_flight() {
+            # queued or running copr-build cascade => the repo is mid-publish
+            for st in queued in_progress; do
+              n=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+                    "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/copr-build.yml/runs?status=$st&per_page=1" \
+                  | python3 -c 'import json,sys; print(json.load(sys.stdin).get("total_count", 0))' \
+                  2>/dev/null || echo 0)
+              [ "$n" -gt 0 ] && return 0
+            done
+            return 1
+          }
+          if in_flight; then
+            echo "a copr-build cascade is queued/in flight — the published repo is mid-publish; skipping this check"
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = workflow_run ]; then
+            # the cascade just landed — make sure the served repodata is the
+            # post-cascade state before judging it
+            copr-cli regenerate-repos "$COPR_PROJECT"
+          fi
+          attempt=0; max=4
           while :; do
             attempt=$((attempt+1))
             echo "::group::repoclosure attempt $attempt"
@@ -93,6 +137,7 @@ jobs:
               echo "repoclosure still failing after $attempt attempts"
               exit 1
             fi
-            echo "attempt $attempt failed — waiting 10 min for a possibly in-flight cascade to finish publishing, then retrying"
-            sleep 600
+            echo "attempt $attempt failed — forcing a repo metadata regen (stale-repodata guard), then retrying"
+            copr-cli regenerate-repos "$COPR_PROJECT"
+            sleep 180
           done
