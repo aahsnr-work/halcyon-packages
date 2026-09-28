@@ -30,7 +30,7 @@ BuildRequires:  gtk3-devel
 BuildRequires:  cairo-devel
 BuildRequires:  harfbuzz-devel
 BuildRequires:  libgccjit-devel
-BuildRequires:  tree-sitter-devel
+BuildRequires:  libtree-sitter-devel
 BuildRequires:  systemd-devel
 BuildRequires:  dbus-devel
 BuildRequires:  gnutls-devel
