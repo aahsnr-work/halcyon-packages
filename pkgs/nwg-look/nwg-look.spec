@@ -6,7 +6,7 @@
 # bundle_go_deps_for_rpm.sh step are gone. (Careful with comments: rpm
 # expands macros inside them, so never mention go/forge macros textually.)
 Name:           nwg-look
-Version:        1.1.1
+Version:        1.1.2
 Release:        1%{?dist}
 %define debug_package %{nil}
 Summary:        GTK3 settings editor adapted to work in the wlroots environment
