@@ -1,15 +1,22 @@
 # Vendor rewrap of the RPM Proton AG publishes in their official Fedora
 # repository (repo.protonvpn.com/fedora-44-stable) — upstream ships the RPM,
-# so a rewrap is the sanctioned path, and the payload re-installs verbatim
-# (rpm2cpio extract). Versioned by the custom sweep feed: ProtonVPN/python-proton-vpn-api-core
-# tags, HEAD-probing the official repo RPM URL zotero-style so a tag whose
-# RPM build has not landed yet never bumps the spec.
+# so a rewrap is the sanctioned path. The payload is re-installed verbatim
+# (rpm2cpio extract) EXCEPT the python trees, which are relocated onto the
+# python3_sitelib/python3_sitearch macros: the upstream RPMs are built for
+# Fedora 44's python3.14 and must land in the buildroot python's
+# site-packages dir on every chroot we build (the .so in api-core is abi3,
+# the pure-python trees are version-agnostic). Stale upstream __pycache__
+# is stripped — brp is off for these (foreign payload) and the dist-info
+# metadata drives the python(abi) deps from the relocated paths.
+# Versioned by the custom sweep feed: ProtonVPN/python-proton-vpn-api-core tags, HEAD-probing
+# the official repo RPM URL zotero-style so a tag whose RPM build has not
+# landed yet never bumps the spec.
 %global             pv_fc 44
 %global             pv_rel 1
 %global             debug_package %{nil}
 %global _build_id_links none
 %global             __os_install_post %{nil}
-
+ExclusiveArch:      x86_64
 Name:               python3-proton-vpn-api-core
 Version:            5.8.3
 Release:            1%{?dist}
@@ -19,8 +26,9 @@ URL:                https://github.com/ProtonVPN/python-proton-vpn-api-core
 #!RemoteAsset
 Source0:            https://repo.protonvpn.com/fedora-%{pv_fc}-stable/%{name}/%{name}-%{version}-%{pv_rel}.fc%{pv_fc}.x86_64.rpm
 ExclusiveArch:      x86_64
-
 BuildRequires:      systemd-rpm-macros
+BuildRequires:      python3-devel
+BuildRequires:      python-srpm-macros
 Requires:           NetworkManager
 Requires:           NetworkManager-openvpn
 Requires:           NetworkManager-openvpn-gnome
@@ -48,8 +56,14 @@ test -d usr/lib64/python3.14/site-packages/proton/vpn
 
 %install
 %__rm -rf %{buildroot}
-mkdir -p %{buildroot}%{_prefix}
-cp -a extract/usr/. %{buildroot}%{_prefix}/
+mkdir -p %{buildroot}%{python3_sitearch} %{buildroot}%{_prefix} %{buildroot}%{_libexecdir}
+cp -a extract/usr/lib64/python3.14/site-packages/proton %{buildroot}%{python3_sitearch}/
+cp -a extract/usr/lib64/python3.14/site-packages/proton_vpn_api_core-*.dist-info %{buildroot}%{python3_sitearch}/
+cp -a extract/usr/lib64/. %{buildroot}%{_prefix}/
+cp -a extract/usr/lib/. %{buildroot}%{_prefix}/
+cp -a extract/usr/share/. %{buildroot}%{_prefix}/
+cp -a extract/usr/libexec/. %{buildroot}%{_prefix}/
+find %{buildroot} -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || :
 
 %post
 %systemd_post proton-vpn-kill-switch-boot.service
@@ -61,8 +75,8 @@ cp -a extract/usr/. %{buildroot}%{_prefix}/
 %systemd_postun proton-vpn-kill-switch-boot.service
 
 %files
-%%{_prefix}/lib64/python3.14/site-packages/proton/
-%%{_prefix}/lib64/python3.14/site-packages/proton_vpn_api_core-*/
+%{python3_sitearch}/proton/
+%{python3_sitearch}/proton_vpn_api_core-*/
 %{_libexecdir}/nm-protun-service
 %{_libexecdir}/proton-vpn-kill-switch-service
 %{_prefix}/lib/NetworkManager/VPN/nm-protun.name
@@ -72,5 +86,5 @@ cp -a extract/usr/. %{buildroot}%{_prefix}/
 %{_datadir}/dbus-1/system.d/nm-protun-service.conf
 
 %changelog
-* Tue Sep 29 2026 halcyon-autoupdate <aahsnr041@proton.me> - 5.8.3-1
+* Tue Sep 30 2026 halcyon-autoupdate <aahsnr041@proton.me> - 5.8.3-1
 - initial package: vendor rewrap of the official repo.protonvpn.com RPM
