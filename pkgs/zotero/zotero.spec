@@ -33,7 +33,7 @@
 
 Name:           zotero
 Version:        10.0.3
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Collect, organize, cite, and share your research sources
 URL:            https://www.zotero.org/
 License:        AGPL-3.0-or-later
@@ -42,6 +42,7 @@ ExclusiveArch:  x86_64
 #!RemoteAsset
 Source0:        https://download.zotero.org/client/release/%{version}/Zotero-%{version}_linux-x86_64.tar.xz
 Source1:        %{appid}.metainfo.xml
+Source2:        %{appid}.policies.json
 
 BuildRequires:  desktop-file-utils
 BuildRequires:  appstream
@@ -77,6 +78,10 @@ sed -i 's|^"\$CALLDIR/zotero-bin"|exec "$CALLDIR/zotero-bin"|' \
 
 install -dm755 %{buildroot}%{_bindir}
 ln -sr %{buildroot}%{bundledir}/zotero %{buildroot}%{_bindir}/zotero
+
+# RPM-managed installs must not self-update: disable the bundled updater via
+# the Firefox-family enterprise policy path (the verify gates grep for it)
+install -Dpm644 %{SOURCE2} %{buildroot}%{bundledir}/distribution/policies.json
 
 # upstream:  desktop_file_install -k Exec,Icon -v zotero,zotero
 # the tarball's desktop file is written for the portable layout — its Exec
@@ -120,6 +125,10 @@ appstreamcli validate --no-net %{buildroot}%{_metainfodir}/%{appid}.metainfo.xml
 %{_metainfodir}/%{appid}.metainfo.xml
 
 %changelog
+* Mon Sep 29 2026 halcyon-autoupdate <aahsnr041@proton.me> - 10.0.3-4
+- ship distribution/policies.json (DisableAppUpdate) — RPM-managed installs
+  must not self-update; the base-image verify gates grep for it
+
 * Sun Sep 27 2026 Cypress Reed <cypress@fyralabs.com>
 - back to 10.0.3: the 10.0.4 linux tarball is gone upstream (403) and killed
   the batch-0 submit job at spectool
