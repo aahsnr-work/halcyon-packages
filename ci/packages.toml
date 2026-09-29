@@ -289,6 +289,17 @@ project = "halcyon-apps"
 feed = "github-release"
 repo = "zed-industries/zed"
 
+# zen-browser: Firefox-based browser, vendor rewrap of the official Linux
+# tarball (upstream ships no distro packages; full brp nil set per
+# obsidian.spec, self-updater disabled via enterprise policy).
+[zen-browser]
+batch = 0
+project = "halcyon-apps"
+
+[zen-browser.updates]
+feed = "github-release"
+repo = "zen-browser/desktop"
+
 # emacs-pgtk: GNU Emacs 31 pgtk source build from the ftp.gnu.org tarball
 # (aot native compilation + tree-sitter; heavy ~2h build). The generic
 # github-tag feed can't strip the "emacs-" tag prefix, so a custom feed
