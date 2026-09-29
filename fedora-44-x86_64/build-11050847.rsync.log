@@ -1,0 +1,14 @@
+Warning: Permanently added '98.81.114.246' (ED25519) to the list of known hosts.
+receiving incremental file list
+./
+build.log.gz
+chroot_scan.tar.gz
+configs.tar.gz
+hw_info.log.gz
+private-internet-access-3.7.2-1.fc44.src.rpm
+private-internet-access.spec
+root.log.gz
+state.log.gz
+
+sent 183 bytes  received 79,849,301 bytes  53,232,989.33 bytes/sec
+total size is 79,829,193  speedup is 1.00
