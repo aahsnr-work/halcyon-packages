@@ -228,6 +228,15 @@ batch = 0
 feed = "github-release"
 repo = "sharkdp/bat"
 
+# bat-extras: bat companion scripts (batdiff/batgrep/batman/batpipe/
+# batwatch/prettybat), noarch build.sh-driven; ported from Terra.
+[bat-extras]
+batch = 0
+
+[bat-extras.updates]
+feed = "github-release"
+repo = "eth-p/bat-extras"
+
 # eza: Rust source build (crates.io); binary only.
 [eza]
 batch = 0
@@ -254,6 +263,16 @@ batch = 0
 [kitty.updates]
 feed = "github-release"
 repo = "kovidgoyal/kitty"
+
+# zed: vendor rewrap of upstream's self-contained zed-linux tarball (same
+# archive zed.dev/install.sh deploys), obsidian-style full brp nil set;
+# x86_64 only.
+[zed]
+batch = 0
+
+[zed.updates]
+feed = "github-release"
+repo = "zed-industries/zed"
 
 # emacs-pgtk: GNU Emacs 31 pgtk source build from the ftp.gnu.org tarball
 # (aot native compilation + tree-sitter; heavy ~2h build). The generic
@@ -314,6 +333,16 @@ batch = 0
 [zoxide.updates]
 feed = "github-release"
 repo = "ajeetdsouza/zoxide"
+
+# asdf: version manager, Go source build in the house nwg-look pattern
+# (plain go build, modules from the Go proxy at build time) instead of
+# Terra's go2rpm machinery.
+[asdf]
+batch = 0
+
+[asdf.updates]
+feed = "github-release"
+repo = "asdf-vm/asdf"
 
 [fd-find]
 batch = 0
@@ -564,6 +593,16 @@ batch = 0
 feed = "custom"
 custom = "qt6ct"
 
+# adw-gtk3: GTK3 theme styled after Libadwaita, vendored from the upstream
+# prebuilt release bundle (v6.x builds via meson + dart-sass, which Fedora
+# does not package — hence the bundle, not a source build).
+[adw-gtk3]
+batch = 0
+
+[adw-gtk3.updates]
+feed = "github-release"
+repo = "lassekongo83/adw-gtk3"
+
 # texlive: the Arch-style group split, rolled biweekly — 40 generated specs
 # (39 collection groups + texlive-meta) owned by the texlive roll workflow
 # (.github/workflows/texlive-update.yml -> tools/texlive-splitter/roll.py),
@@ -621,6 +660,27 @@ batch = 0
 [nerd-fonts-symbols-only.updates]
 feed = "github-release"
 repo = "ryanoasis/nerd-fonts"
+
+# jetbrains-mono-fonts-all: every static weight of JetBrains Mono and
+# JetBrains Mono NL from the upstream release zip (one package, all
+# families — the nerd-fonts one-package-per-family shape, "-all" flavor).
+[jetbrains-mono-fonts-all]
+batch = 0
+
+[jetbrains-mono-fonts-all.updates]
+feed = "github-release"
+repo = "JetBrains/JetBrainsMono"
+
+# google-noto-color-emoji-fonts: the official COLRv1 build vendored from
+# google/fonts (upstream noto-emoji attaches no font assets to releases and
+# tags carry no built font); version = the pinned google/fonts commit's
+# date (custom_noto_color_emoji in ci/sweep/custom.py).
+[google-noto-color-emoji-fonts]
+batch = 0
+
+[google-noto-color-emoji-fonts.updates]
+feed = "custom"
+custom = "noto-color-emoji"
 
 # texlive rolling groups (batch 5): generated specs owned by the
 # biweekly texlive roll (.github/workflows/texlive-update.yml);

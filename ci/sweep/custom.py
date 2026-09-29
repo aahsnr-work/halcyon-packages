@@ -514,3 +514,20 @@ def custom_emacs_pgtk(spec: SpecFile, pkg_dir: Path) -> None:
         spec.set_version(version)
         return
     raise feeds.FeedError("emacs-pgtk: no tag carries a published tarball")
+
+
+def custom_noto_color_emoji(spec: SpecFile, pkg_dir: Path) -> None:
+    # googlefonts/noto-emoji attaches no font assets to its releases and its
+    # tag trees carry no built font — the official current build lives in the
+    # google/fonts repo (ofl/notocoloremoji). Version is the date of the
+    # newest commit that touched the font file, and the same commit is
+    # pinned into the spec's noto_commit global so Source0/Source1 always
+    # fetch exactly the shipped build.
+    font_path = "ofl/notocoloremoji/NotoColorEmoji-Regular.ttf"
+    commit = feeds.fetch_json(
+        "https://api.github.com/repos/google/fonts/commits?path="
+        + font_path
+        + "&per_page=1"
+    )[0]
+    spec.set_global("noto_commit", commit["sha"][:12])
+    spec.set_version(commit["commit"]["committer"]["date"][:10].replace("-", ""))
