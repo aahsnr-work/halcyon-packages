@@ -1,15 +1,15 @@
-# repoclosure — dependency-closure check of the published Copr repo.
+# repoclosure — dependency-closure check of the published Copr repos.
 #
 # Adapted from LionHeartP/hyprlandRPM's repoclosure.yml: run dnf's
-# repoclosure against EVERYTHING published in aahsnr-work/halcyon and fail
-# if any RPM's dependencies cannot resolve against Fedora 44 (+ Terra 44,
-# which the buildroot also supplies). This catches what per-package builds
-# cannot: a package whose runtime Requires nothing satisfies — a new
+# repoclosure against EVERYTHING published in each halcyon Copr project and
+# fail if any RPM's dependencies cannot resolve against Fedora 44/45 (+
+# Terra, which the buildroot also supplies). This catches what per-package
+# builds cannot: a package whose runtime Requires nothing satisfies — a new
 # hyprland needing a newer lib than Fedora 44 has, a broken texlive group
 # pin, a bumped-away dependency.
 #
-# The repo drop-in is the checked-in repo/halcyon.repo (the consumer
-# file itself — baseurl, gpgkey, priority=1), so the check sees exactly
+# The repo drop-ins are the checked-in repo/halcyon*.repo files (the consumer
+# files themselves — baseurl, gpgkey, priority=1), so the check sees exactly
 # what consumers see. --newest resolves against the newest packages only;
 # the second step adds --best (stricter: prefers the best candidate across
 # repos instead of failing over).
@@ -20,14 +20,21 @@
 #      metadata after each — a sample taken while a copr-build run is
 #      queued/in flight sees stale-vs-new version skew (a texlive group
 #      requiring texlive-latex = <snapshot> before latex's own build
-#      lands). The run skips entirely while a cascade is in flight.
+#      lands). The gate job skips the check entirely while a cascade is
+#      queued/in flight — as a job-level skip, so those runs show up as
+#      "skipped" in the Actions list, never as an indistinguishable green
+#      success. Both probes fail closed: an API error holds or voids the
+#      check instead of silently sampling a mid-publish repo, and if a
+#      cascade is queued after the gate but before the check starts, the
+#      check voids itself with a failure.
 #   2. Copr can leave the SERVED repodata behind the published packages for
 #      hours once a cascade ends — observed 2026-09-28: four texlive
 #      groups were published by 09:00Z but absent from the repodata until
 #      the next cascade's builds forced a regen at 15:55Z (no builds ran
 #      in between, so nothing else triggered one). copr-cli
-#      regenerate-repos forces the rebuild, so every failed attempt is
-#      followed by a forced regen before retrying.
+#      regenerate-repos forces the rebuild, so the post-cascade run regens
+#      up front and every failed attempt is followed by a forced regen
+#      before retrying.
 name: repoclosure
 
 on:
@@ -41,24 +48,47 @@ on:
 
 permissions:
   contents: read
-  actions: read # the in-flight-cascade gate lists copr-build runs
+  actions: read # the gate lists copr-build runs
 
 concurrency:
   group: repoclosure
   cancel-in-progress: true
 
 jobs:
+  gate:
+    # a queued or running copr-build cascade means the published repos are
+    # mid-publish — hold the closure check until the cascade finishes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      in_flight: ${{ steps.check.outputs.in_flight }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          in_flight=false
+          for st in queued in_progress; do
+            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/copr-build.yml/runs?status=$st&per_page=1" --jq .total_count)
+            if [ "$n" -gt 0 ]; then in_flight=true; fi
+          done
+          echo "copr-build cascade queued/in flight: $in_flight"
+          echo "in_flight=$in_flight" >> "$GITHUB_OUTPUT"
+
   repoclosure:
+    needs: gate
     # workflow_run fires for failed runs too; only check after a completed
-    # cascade (a failed one did not publish anything new)
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # cascade (a failed one did not publish anything new) — and never while
+    # another cascade is queued/in flight
+    if: needs.gate.outputs.in_flight == 'false' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     container:
       image: registry.fedoraproject.org/fedora:44
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Install the repo drop-ins (all six halcyon groups + Terra 44 + lionheartp)
+      - name: Install the repo drop-ins (all six halcyon groups + Terra + lionheartp)
         run: |
           set -eu
           # every group's consumer drop-in lives in repo/ — install them all so
@@ -70,7 +100,7 @@ jobs:
           done
           cat > /etc/yum.repos.d/terra.repo <<'EOF'
           [terra]
-          name=Terra 44
+          name=Terra
           baseurl=https://repos.fyralabs.com/terra$releasever/
           type=rpm-md
           gpgcheck=1
@@ -105,20 +135,32 @@ jobs:
           COPR_PROJECTS: "aahsnr-work/halcyon aahsnr-work/halcyon-cli aahsnr-work/halcyon-apps aahsnr-work/halcyon-fonts aahsnr-work/halcyon-texlive aahsnr-work/halcyon-kernel"
         run: |
           set -u
-          in_flight() {
-            # queued or running copr-build cascade => the repo is mid-publish
-            for st in queued in_progress; do
-              n=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
-                    "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/copr-build.yml/runs?status=$st&per_page=1" \
-                  | python3 -c 'import json,sys; print(json.load(sys.stdin).get("total_count", 0))' \
-                  2>/dev/null || echo 0)
-              [ "$n" -gt 0 ] && return 0
-            done
-            return 1
+          in_flight_now() {
+            # re-derive the gate's answer at check time — the gate ran minutes
+            # ago and a cascade could have been queued since. Fail closed: a
+            # probe error counts as in-flight and voids the check.
+            python3 <<'PY'
+          import json, os, sys, urllib.request
+          total = 0
+          for st in ("queued", "in_progress"):
+              url = ("https://api.github.com/repos/%s/actions/workflows/copr-build.yml/runs"
+                     "?status=%s&per_page=1" % (os.environ["GITHUB_REPOSITORY"], st))
+              req = urllib.request.Request(url, headers={
+                  "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                  "Accept": "application/vnd.github+json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      total += json.load(r).get("total_count", 0)
+              except Exception:
+                  print("in-flight probe failed; failing closed", file=sys.stderr)
+                  total = 1
+                  break
+          sys.exit(0 if total else 1)
+          PY
           }
-          if in_flight; then
-            echo "a copr-build cascade is queued/in flight — the published repo is mid-publish; skipping this check"
-            exit 0
+          if in_flight_now; then
+            echo "a copr-build cascade started after the gate ran (or the probe failed) — the published repos are mid-publish; voiding this check, the next trigger resamples"
+            exit 1
           fi
           if [ "${{ github.event_name }}" = workflow_run ]; then
             # the cascade just landed — make sure the served repodata is the
