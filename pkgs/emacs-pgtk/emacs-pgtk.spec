@@ -86,7 +86,10 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/*.desktop
 %license COPYING
 %{_bindir}/*
 %{_libexecdir}/emacs/
+%{_libdir}/emacs/
+%{_includedir}/emacs-module.h
 %{_datadir}/emacs/
+%{_datadir}/glib-2.0/schemas/org.gnu.emacs.defaults.gschema.xml
 %{_datadir}/applications/emacs*.desktop
 %{_metainfodir}/*.xml
 %{_datadir}/icons/hicolor/*/*/*
