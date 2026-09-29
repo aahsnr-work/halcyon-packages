@@ -1,0 +1,16 @@
+# halcyon-apps Copr repo — one of the six halcyon group repositories (see
+# repo/halcyon.repo for the desktop core and the priority rationale).
+# Groups own disjoint package sets, so priority=1 on all of them is
+# unambiguous: each shadows Fedora/Terra for the packages it builds.
+
+[copr:copr.fedorainfracloud.org:aahsnr-work:halcyon-apps]
+name=Copr repo for halcyon-apps (aahsnr-work) — priority 1
+baseurl=https://download.copr.fedorainfracloud.org/results/aahsnr-work/halcyon-apps/fedora-$releasever-$basearch/
+type=rpm-md
+skip_if_unavailable=False
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/aahsnr-work/halcyon-apps/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+priority=1

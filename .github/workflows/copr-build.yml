@@ -214,6 +214,7 @@ jobs:
       - name: Build the SRPM and submit to Copr
         env:
           NAME: ${{ matrix.pkg.name }}
+          PROJECT: ${{ matrix.pkg.labels.project }}
         run: |
           set -euo pipefail
           spec="pkgs/$NAME/$NAME.spec"
@@ -229,7 +230,7 @@ jobs:
               --define "_specdir $PWD/$(dirname "$spec")" \
               "$spec" | sed -n 's/^Wrote: //p')
           [ -n "$srpm" ] || { echo "rpmbuild -bs produced no SRPM"; exit 1; }
-          copr-cli build --nowait "$COPR_PROJECT" "$srpm" | tee submit.log
+          copr-cli build --nowait "$PROJECT" "$srpm" | tee submit.log
           id=$(sed -n 's/^Created builds: //p' submit.log)
           [ -n "$id" ] || { echo "no build id in copr-cli output"; exit 1; }
           echo "$id" > "build-id-$NAME.txt"
@@ -316,6 +317,7 @@ jobs:
       - name: Build the SRPM and submit to Copr
         env:
           NAME: ${{ matrix.pkg.name }}
+          PROJECT: ${{ matrix.pkg.labels.project }}
         run: |
           set -euo pipefail
           spec="pkgs/$NAME/$NAME.spec"
@@ -331,7 +333,7 @@ jobs:
               --define "_specdir $PWD/$(dirname "$spec")" \
               "$spec" | sed -n 's/^Wrote: //p')
           [ -n "$srpm" ] || { echo "rpmbuild -bs produced no SRPM"; exit 1; }
-          copr-cli build --nowait "$COPR_PROJECT" "$srpm" | tee submit.log
+          copr-cli build --nowait "$PROJECT" "$srpm" | tee submit.log
           id=$(sed -n 's/^Created builds: //p' submit.log)
           [ -n "$id" ] || { echo "no build id in copr-cli output"; exit 1; }
           echo "$id" > "build-id-$NAME.txt"
@@ -416,6 +418,7 @@ jobs:
       - name: Build the SRPM and submit to Copr
         env:
           NAME: ${{ matrix.pkg.name }}
+          PROJECT: ${{ matrix.pkg.labels.project }}
         run: |
           set -euo pipefail
           spec="pkgs/$NAME/$NAME.spec"
@@ -431,7 +434,7 @@ jobs:
               --define "_specdir $PWD/$(dirname "$spec")" \
               "$spec" | sed -n 's/^Wrote: //p')
           [ -n "$srpm" ] || { echo "rpmbuild -bs produced no SRPM"; exit 1; }
-          copr-cli build --nowait "$COPR_PROJECT" "$srpm" | tee submit.log
+          copr-cli build --nowait "$PROJECT" "$srpm" | tee submit.log
           id=$(sed -n 's/^Created builds: //p' submit.log)
           [ -n "$id" ] || { echo "no build id in copr-cli output"; exit 1; }
           echo "$id" > "build-id-$NAME.txt"
@@ -516,6 +519,7 @@ jobs:
       - name: Build the SRPM and submit to Copr
         env:
           NAME: ${{ matrix.pkg.name }}
+          PROJECT: ${{ matrix.pkg.labels.project }}
         run: |
           set -euo pipefail
           spec="pkgs/$NAME/$NAME.spec"
@@ -531,7 +535,7 @@ jobs:
               --define "_specdir $PWD/$(dirname "$spec")" \
               "$spec" | sed -n 's/^Wrote: //p')
           [ -n "$srpm" ] || { echo "rpmbuild -bs produced no SRPM"; exit 1; }
-          copr-cli build --nowait "$COPR_PROJECT" "$srpm" | tee submit.log
+          copr-cli build --nowait "$PROJECT" "$srpm" | tee submit.log
           id=$(sed -n 's/^Created builds: //p' submit.log)
           [ -n "$id" ] || { echo "no build id in copr-cli output"; exit 1; }
           echo "$id" > "build-id-$NAME.txt"
@@ -619,6 +623,7 @@ jobs:
       - name: Build the SRPM and submit to Copr
         env:
           NAME: ${{ matrix.pkg.name }}
+          PROJECT: ${{ matrix.pkg.labels.project }}
         run: |
           set -euo pipefail
           spec="pkgs/$NAME/$NAME.spec"
@@ -634,7 +639,7 @@ jobs:
               --define "_specdir $PWD/$(dirname "$spec")" \
               "$spec" | sed -n 's/^Wrote: //p')
           [ -n "$srpm" ] || { echo "rpmbuild -bs produced no SRPM"; exit 1; }
-          copr-cli build --nowait "$COPR_PROJECT" "$srpm" | tee submit.log
+          copr-cli build --nowait "$PROJECT" "$srpm" | tee submit.log
           id=$(sed -n 's/^Created builds: //p' submit.log)
           [ -n "$id" ] || { echo "no build id in copr-cli output"; exit 1; }
           echo "$id" > "build-id-$NAME.txt"
@@ -724,6 +729,7 @@ jobs:
       - name: Build the SRPM and submit to Copr
         env:
           NAME: ${{ matrix.pkg.name }}
+          PROJECT: ${{ matrix.pkg.labels.project }}
         run: |
           set -euo pipefail
           spec="pkgs/$NAME/$NAME.spec"
@@ -737,7 +743,7 @@ jobs:
               --define "_specdir $PWD/$(dirname "$spec")" \
               "$spec" | sed -n 's/^Wrote: //p')
           [ -n "$srpm" ] || { echo "rpmbuild -bs produced no SRPM"; exit 1; }
-          copr-cli build --nowait "$COPR_PROJECT" "$srpm" | tee submit.log
+          copr-cli build --nowait "$PROJECT" "$srpm" | tee submit.log
           id=$(sed -n 's/^Created builds: //p' submit.log)
           [ -n "$id" ] || { echo "no build id in copr-cli output"; exit 1; }
           echo "$id" > "build-id-$NAME.txt"

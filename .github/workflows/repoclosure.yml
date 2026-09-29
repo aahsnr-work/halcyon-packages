@@ -58,10 +58,16 @@ jobs:
       image: registry.fedoraproject.org/fedora:44
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Install the repo drop-ins (halcyon + Terra 44)
+      - name: Install the repo drop-ins (all six halcyon groups + Terra 44 + lionheartp)
         run: |
           set -eu
-          cp repo/halcyon.repo /etc/yum.repos.d/
+          # every group's consumer drop-in lives in repo/ — install them all so
+          # each per-repo closure check sees exactly what consumers see. (The
+          # halcyon-mirror.repo alternative is NOT installed: it proxies the
+          # core repo only and would double-enable the desktop packages.)
+          for g in "" -cli -apps -fonts -texlive -kernel; do
+            cp "repo/halcyon$g.repo" /etc/yum.repos.d/
+          done
           cat > /etc/yum.repos.d/terra.repo <<'EOF'
           [terra]
           name=Terra 44
@@ -96,7 +102,7 @@ jobs:
       - name: Repoclosure (newest, then newest+best; regenerate-and-retry on failure)
         env:
           GH_TOKEN: ${{ github.token }}
-          COPR_PROJECT: aahsnr-work/halcyon
+          COPR_PROJECTS: "aahsnr-work/halcyon aahsnr-work/halcyon-cli aahsnr-work/halcyon-apps aahsnr-work/halcyon-fonts aahsnr-work/halcyon-texlive aahsnr-work/halcyon-kernel"
         run: |
           set -u
           in_flight() {
@@ -117,27 +123,36 @@ jobs:
           if [ "${{ github.event_name }}" = workflow_run ]; then
             # the cascade just landed — make sure the served repodata is the
             # post-cascade state before judging it
-            copr-cli regenerate-repos "$COPR_PROJECT"
+            for p in $COPR_PROJECTS; do copr-cli regenerate-repos "$p"; done
           fi
           attempt=0; max=4
           while :; do
             attempt=$((attempt+1))
-            echo "::group::repoclosure attempt $attempt"
-            if dnf -q repoclosure \
-                 --check copr:copr.fedorainfracloud.org:aahsnr-work:halcyon \
-                 --newest \
-              && dnf -q repoclosure \
-                 --check copr:copr.fedorainfracloud.org:aahsnr-work:halcyon \
-                 --newest --best; then
+            rc=0
+            for p in $COPR_PROJECTS; do
+              grp=${p#*/}
+              echo "::group::repoclosure ($grp) attempt $attempt"
+              if dnf -q repoclosure \
+                   --check "copr:copr.fedorainfracloud.org:aahsnr-work:$grp" \
+                   --newest \
+                && dnf -q repoclosure \
+                   --check "copr:copr.fedorainfracloud.org:aahsnr-work:$grp" \
+                   --newest --best; then
+                echo "$grp: closed"
+              else
+                echo "$grp: UNRESOLVED DEPENDENCIES"
+                rc=1
+              fi
               echo "::endgroup::"
+            done
+            if [ "$rc" -eq 0 ]; then
               exit 0
             fi
-            echo "::endgroup::"
             if [ "$attempt" -ge "$max" ]; then
               echo "repoclosure still failing after $attempt attempts"
               exit 1
             fi
-            echo "attempt $attempt failed — forcing a repo metadata regen (stale-repodata guard), then retrying"
-            copr-cli regenerate-repos "$COPR_PROJECT"
+            echo "attempt $attempt failed — forcing repo metadata regens (stale-repodata guard), then retrying"
+            for p in $COPR_PROJECTS; do copr-cli regenerate-repos "$p"; done
             sleep 180
           done

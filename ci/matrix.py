@@ -49,6 +49,17 @@ PACKAGES_FILE = REPO_ROOT / "ci" / "packages.toml"
 # Paths whose changes invalidate every package (infrastructure).
 INFRA_PREFIXES = ("ci/", ".github/builder/")
 ARCH = "x86_64"
+# the Copr projects a package can build into (ci/packages.toml `project`
+# field; absent = the desktop core). Each project must own a disjoint set
+# of packages — the registry is the single source of truth for membership.
+KNOWN_PROJECTS = (
+    "halcyon",
+    "halcyon-cli",
+    "halcyon-apps",
+    "halcyon-fonts",
+    "halcyon-texlive",
+    "halcyon-kernel",
+)
 
 
 def die(msg: str) -> None:
@@ -96,8 +107,14 @@ def load_packages() -> dict[str, dict]:
             die(f"[{name}]: {spec} does not exist")
         pkgs[name] = {
             "batch": int(entry.get("batch", 0)),
+            "project": entry.get("project", "halcyon"),
             "conservative": False,
         }
+        if pkgs[name]["project"] not in KNOWN_PROJECTS:
+            die(
+                f"[{name}]: unknown project {pkgs[name]['project']!r} "
+                f"(known: {', '.join(KNOWN_PROJECTS)})"
+            )
         parsed = _br_tokens(spec)
         if parsed is None:
             pkgs[name]["brs"] = []
@@ -286,7 +303,11 @@ def entries(names: set[str], pkgs: dict[str, dict], labels: dict[str, str]):
             # names and spec paths
             "name": name,
             "arch": ARCH,
-            "labels": {"batch": str(pkgs[name]["batch"]), **labels},
+            "labels": {
+                "batch": str(pkgs[name]["batch"]),
+                "project": pkgs[name]["project"],
+                **labels,
+            },
         }
 
 
@@ -310,7 +331,7 @@ def main() -> None:
 
     if args.list:
         for name in sorted(chosen, key=lambda n: (pkgs[n]["batch"], n)):
-            print(f"{pkgs[name]['batch']}  {name}")
+            print(f"{pkgs[name]['batch']}  {pkgs[name]['project']:<15}  {name}")
         return
 
     labels = dict(kv.split("=", 1) for kv in args.label)

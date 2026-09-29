@@ -24,6 +24,11 @@
 #   feed = "custom"          + custom = "<name>"     ci/sweep/custom.py function
 # Packages without it (texlive rolling groups) are never swept.
 #
+# The optional `project = "<copr-project>"` field routes a package's
+# builds to that Copr project (default "halcyon", the desktop core).
+# matrix.py emits it as a build-matrix label; unknown projects fail
+# validation. Every project must own a disjoint set of packages.
+#
 # batch 0  roots: Fedora-only build deps and leaf tools/apps/wrappers
 # batch 1  first level: hyprlang, aquamarine, hyprgraphics, hyprwire, noctalia-greeter-git
 # batch 2  second level: hyprcursor, hyprland-qt-support, xdg-desktop-portal-hyprland, hyprtoolkit
@@ -191,6 +196,7 @@ repo = "hyprwm/hyprshutdown"
 # with shell completions. Its version follows the LATEST file of oven-sh/bun.
 [bun]
 batch = 0
+project = "halcyon-cli"
 
 [bun.updates]
 feed = "custom"
@@ -199,6 +205,7 @@ custom = "bun"
 # tealdeer: Rust source build (crates.io) + completions generated at build time.
 [tealdeer]
 batch = 0
+project = "halcyon-cli"
 
 [tealdeer.updates]
 feed = "github-release"
@@ -207,6 +214,7 @@ repo = "dbrgn/tealdeer"
 # uv: official musl tarball (uv + uvx), completions generated at build time.
 [uv]
 batch = 0
+project = "halcyon-cli"
 
 [uv.updates]
 feed = "github-release"
@@ -215,6 +223,7 @@ repo = "astral-sh/uv"
 # atuin: Rust source build (crates.io).
 [atuin]
 batch = 0
+project = "halcyon-cli"
 
 [atuin.updates]
 feed = "github-release"
@@ -223,6 +232,7 @@ repo = "atuinsh/atuin"
 # bat: Rust source build (crates.io); binary only.
 [bat]
 batch = 0
+project = "halcyon-cli"
 
 [bat.updates]
 feed = "github-release"
@@ -232,6 +242,7 @@ repo = "sharkdp/bat"
 # batwatch/prettybat), noarch build.sh-driven; ported from Terra.
 [bat-extras]
 batch = 0
+project = "halcyon-cli"
 
 [bat-extras.updates]
 feed = "github-release"
@@ -240,6 +251,7 @@ repo = "eth-p/bat-extras"
 # eza: Rust source build (crates.io); binary only.
 [eza]
 batch = 0
+project = "halcyon-cli"
 
 [eza.updates]
 feed = "github-release"
@@ -249,6 +261,7 @@ repo = "eza-community/eza"
 # console/cairo configuration). Version sweeps SourceForge best_release.
 [gnuplot]
 batch = 0
+project = "halcyon-cli"
 
 [gnuplot.updates]
 feed = "custom"
@@ -259,6 +272,7 @@ custom = "gnuplot"
 # sphinx man pages). Subpackages: terminfo, shell-integration, kitten.
 [kitty]
 batch = 0
+project = "halcyon-apps"
 
 [kitty.updates]
 feed = "github-release"
@@ -269,6 +283,7 @@ repo = "kovidgoyal/kitty"
 # x86_64 only.
 [zed]
 batch = 0
+project = "halcyon-apps"
 
 [zed.updates]
 feed = "github-release"
@@ -281,6 +296,7 @@ repo = "zed-industries/zed"
 # (pretest tags' tarballs live on alpha.gnu.org and would 404 here).
 [emacs-pgtk]
 batch = 0
+project = "halcyon-apps"
 
 [emacs-pgtk.updates]
 feed = "custom"
@@ -290,6 +306,7 @@ custom = "emacs-pgtk"
 # Fedora-available audio backends enabled).
 [cava]
 batch = 0
+project = "halcyon-cli"
 
 [cava.updates]
 feed = "github-release"
@@ -300,6 +317,7 @@ repo = "karlstav/cava"
 # runners; Terra builds it from source with %cargo_prep_online.)
 [pixi]
 batch = 0
+project = "halcyon-cli"
 
 [pixi.updates]
 feed = "github-release"
@@ -314,6 +332,7 @@ repo = "prefix-dev/pixi"
 # 2026-09-27 batch-0 submit (custom_zotero in ci/sweep/custom.py).
 [zotero]
 batch = 0
+project = "halcyon-apps"
 
 [zotero.updates]
 feed = "custom"
@@ -323,12 +342,14 @@ custom = "zotero"
 # its first Copr build is the validation. Watch the first run.
 [xwiimote-ng]
 batch = 0
+project = "halcyon-cli"
 
 # zoxide / fd-find / cliphist: rust source builds (cliphist builds from the
 # tag tarball — it does not publish to crates.io). zoxide and fd-find shadow
 # older Fedora versions; cliphist matches Fedora's 0.7.0 and wins on priority.
 [zoxide]
 batch = 0
+project = "halcyon-cli"
 
 [zoxide.updates]
 feed = "github-release"
@@ -339,6 +360,7 @@ repo = "ajeetdsouza/zoxide"
 # Terra's go2rpm machinery.
 [asdf]
 batch = 0
+project = "halcyon-cli"
 
 [asdf.updates]
 feed = "github-release"
@@ -346,6 +368,7 @@ repo = "asdf-vm/asdf"
 
 [fd-find]
 batch = 0
+project = "halcyon-cli"
 
 [fd-find.updates]
 feed = "github-release"
@@ -353,6 +376,7 @@ repo = "sharkdp/fd"
 
 [cliphist]
 batch = 0
+project = "halcyon-cli"
 
 [cliphist.updates]
 feed = "github-release"
@@ -364,6 +388,7 @@ repo = "sentriz/cliphist"
 # the Version line and the crates.io Source URL.
 [topgrade]
 batch = 0
+project = "halcyon-cli"
 
 [topgrade.updates]
 feed = "github-release"
@@ -380,6 +405,7 @@ repo = "dev-0x7C6/xwiimote-ng"
 # upstream releases.
 [ticktick]
 batch = 0
+project = "halcyon-apps"
 
 [ticktick.updates]
 feed = "custom"
@@ -391,6 +417,7 @@ custom = "ticktick"
 # sweeps the desktop-v releases of bitwarden/clients.
 [bitwarden]
 batch = 0
+project = "halcyon-apps"
 
 [bitwarden.updates]
 feed = "custom"
@@ -402,6 +429,7 @@ custom = "bitwarden"
 # tarball sha256 is verified in the source step against the GitHub digest.
 [obsidian]
 batch = 0
+project = "halcyon-apps"
 
 [obsidian.updates]
 feed = "custom"
@@ -417,6 +445,7 @@ custom = "obsidian"
 # identical version so updates land here first.
 [fzf]
 batch = 0
+project = "halcyon-cli"
 
 [fzf.updates]
 feed = "github-release"
@@ -426,6 +455,7 @@ repo = "junegunn/fzf"
 # nothing relevant; upstream tags v1.1 and 1.1 at the same commit).
 [fzy]
 batch = 0
+project = "halcyon-cli"
 
 [fzy.updates]
 feed = "github-tag"
@@ -436,6 +466,7 @@ repo = "jhawthorn/fzy"
 # the channel the CLI's own updater follows.
 [kilo]
 batch = 0
+project = "halcyon-cli"
 
 [kilo.updates]
 feed = "custom"
@@ -445,6 +476,7 @@ custom = "kilo"
 # resolved from the 302 target of opencode.ai's stable download endpoint.
 [opencode-desktop]
 batch = 0
+project = "halcyon-apps"
 
 [opencode-desktop.updates]
 feed = "custom"
@@ -454,6 +486,7 @@ custom = "opencode_desktop"
 # are 1:1 on ferdium-app.
 [ferdium]
 batch = 0
+project = "halcyon-apps"
 
 [ferdium.updates]
 feed = "github-release"
@@ -465,6 +498,7 @@ repo = "ferdium/ferdium-app"
 # _build for the ide).
 [antigravity-ide]
 batch = 0
+project = "halcyon-apps"
 
 [antigravity-ide.updates]
 feed = "custom"
@@ -472,6 +506,7 @@ custom = "antigravity_ide"
 
 [antigravity-cli]
 batch = 0
+project = "halcyon-apps"
 
 [antigravity-cli.updates]
 feed = "custom"
@@ -491,6 +526,7 @@ repo = "nwg-piotr/nwg-displays"
 # (crates fetched during the build — the project runs --enable-net on).
 [distroshelf]
 batch = 0
+project = "halcyon-apps"
 
 [distroshelf.updates]
 feed = "github-release"
@@ -501,6 +537,7 @@ repo = "ranfdev/DistroShelf"
 # carries an older chafa, this one shadows it.
 [chafa]
 batch = 0
+project = "halcyon-cli"
 
 [chafa.updates]
 feed = "github-release"
@@ -508,6 +545,7 @@ repo = "hpjansson/chafa"
 
 [dust]
 batch = 0
+project = "halcyon-cli"
 
 [dust.updates]
 feed = "github-release"
@@ -515,6 +553,7 @@ repo = "bootandy/dust"
 
 [lazygit]
 batch = 0
+project = "halcyon-cli"
 
 [lazygit.updates]
 feed = "github-release"
@@ -522,6 +561,7 @@ repo = "jesseduffield/lazygit"
 
 [pandoc]
 batch = 0
+project = "halcyon-cli"
 
 [pandoc.updates]
 feed = "github-release"
@@ -529,6 +569,7 @@ repo = "jgm/pandoc"
 
 [starship]
 batch = 0
+project = "halcyon-cli"
 
 [starship.updates]
 feed = "github-release"
@@ -536,6 +577,7 @@ repo = "starship/starship"
 
 [yazi]
 batch = 0
+project = "halcyon-cli"
 
 [yazi.updates]
 feed = "github-release"
@@ -543,6 +585,7 @@ repo = "sxyazi/yazi"
 
 [zellij]
 batch = 0
+project = "halcyon-cli"
 
 [zellij.updates]
 feed = "github-release"
@@ -552,6 +595,7 @@ repo = "zellij-org/zellij"
 # tarball.
 [opencode]
 batch = 0
+project = "halcyon-cli"
 
 [opencode.updates]
 feed = "custom"
@@ -561,6 +605,7 @@ custom = "opencode"
 # .NET release binary (no crates.io publish, not in Fedora).
 [marksman]
 batch = 0
+project = "halcyon-cli"
 
 [marksman.updates]
 feed = "custom"
@@ -570,6 +615,7 @@ custom = "marksman"
 # (the crates.io texlab is stale upstream; yazi pattern).
 [texlab]
 batch = 0
+project = "halcyon-cli"
 
 [texlab.updates]
 feed = "github-release"
@@ -611,6 +657,7 @@ repo = "lassekongo83/adw-gtk3"
 # is intentionally empty.
 [onlyoffice-desktopeditors]
 batch = 3
+project = "halcyon-apps"
 
 [onlyoffice-desktopeditors.updates]
 feed = "github-release"
@@ -622,6 +669,7 @@ repo = "ONLYOFFICE/DesktopEditors"
 # (~1.5-2h) sitting in batch 3 alongside onlyoffice-desktopeditors.
 [kernel-p03]
 batch = 3
+project = "halcyon-kernel"
 
 [kernel-p03.updates]
 feed = "custom"
@@ -635,6 +683,7 @@ custom = "kernel-p03"
 # rules.
 [nerd-fonts-jetbrainsmono]
 batch = 0
+project = "halcyon-fonts"
 
 [nerd-fonts-jetbrainsmono.updates]
 feed = "github-release"
@@ -642,6 +691,7 @@ repo = "ryanoasis/nerd-fonts"
 
 [nerd-fonts-ubuntu]
 batch = 0
+project = "halcyon-fonts"
 
 [nerd-fonts-ubuntu.updates]
 feed = "github-release"
@@ -649,6 +699,7 @@ repo = "ryanoasis/nerd-fonts"
 
 [nerd-fonts-ubuntu-mono]
 batch = 0
+project = "halcyon-fonts"
 
 [nerd-fonts-ubuntu-mono.updates]
 feed = "github-release"
@@ -656,6 +707,7 @@ repo = "ryanoasis/nerd-fonts"
 
 [nerd-fonts-symbols-only]
 batch = 0
+project = "halcyon-fonts"
 
 [nerd-fonts-symbols-only.updates]
 feed = "github-release"
@@ -666,6 +718,7 @@ repo = "ryanoasis/nerd-fonts"
 # families — the nerd-fonts one-package-per-family shape, "-all" flavor).
 [jetbrains-mono-fonts-all]
 batch = 0
+project = "halcyon-fonts"
 
 [jetbrains-mono-fonts-all.updates]
 feed = "github-release"
@@ -677,6 +730,7 @@ repo = "JetBrains/JetBrainsMono"
 # date (custom_noto_color_emoji in ci/sweep/custom.py).
 [google-noto-color-emoji-fonts]
 batch = 0
+project = "halcyon-fonts"
 
 [google-noto-color-emoji-fonts.updates]
 feed = "custom"
@@ -689,120 +743,160 @@ custom = "noto-color-emoji"
 
 [texlive-basic]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-bibtexextra]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-binextra]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-context]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-fontsextra]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-fontsrecommended]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-fontutils]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-formatsextra]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-games]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-humanities]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langarabic]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langchinese]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langcjk]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langcyrillic]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langczechslovak]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langenglish]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langeuropean]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langfrench]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langgerman]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langgreek]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langitalian]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langjapanese]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langkorean]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langother]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langpolish]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langportuguese]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-langspanish]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-latex]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-latexextra]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-latexrecommended]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-luatex]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-mathscience]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-metapost]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-music]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-pictures]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-plaingeneric]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-pstricks]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-publishers]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-xetex]
 batch = 5
+project = "halcyon-texlive"
 
 [texlive-meta]
 batch = 5
+project = "halcyon-texlive"
