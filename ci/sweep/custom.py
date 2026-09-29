@@ -531,3 +531,77 @@ def custom_noto_color_emoji(spec: SpecFile, pkg_dir: Path) -> None:
     )[0]
     spec.set_global("noto_commit", commit["sha"][:12])
     spec.set_version(commit["commit"]["committer"]["date"][:10].replace("-", ""))
+
+
+def custom_private_internet_access(spec: SpecFile, pkg_dir: Path) -> None:
+    # PIA publishes no version feed at all: no GitHub release assets and a 403
+    # on the installers directory listing — the AUR piavpn-bin maintainer does
+    # the discovery work, so mirror their pins: pkgver for the version, the
+    # PKGBUILD's build_number for the pia_build global the Source URL
+    # interpolates.
+    pkgtxt = feeds.fetch_text(
+        "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=piavpn-bin")
+    spec.set_version(feeds.find_group(r"(?m)^pkgver=(\S+)", pkgtxt))
+    spec.set_global("pia_build", feeds.find_group(r"(?m)^build_number=(\S+)", pkgtxt))
+
+
+def custom_mullvad_vpn(spec: SpecFile, pkg_dir: Path) -> None:
+    # mullvad.net's Linux download page is server-rendered and links the
+    # current x86_64 RPM on their GitHub releases — the same page upstream's
+    # own install instructions point at.
+    html = feeds.fetch_text("https://mullvad.net/en/download/vpn/linux")
+    spec.set_version(feeds.find_group(r"MullvadVPN-([0-9.]+)_x86_64\.rpm", html))
+
+
+def _proton_rpm_version(ghrepo: str, rpm_name: str, srcarch: str, spec: SpecFile) -> None:
+    # ProtonVPN/<ghrepo> tags newest-first, HEAD-probing the official
+    # repo.protonvpn.com RPM URL so a tag whose RPM build has not landed yet
+    # (Proton's RPM builds can lag their tags) never bumps the spec. The
+    # official repo 403s the sweeper's default UA and answers the browser one.
+    import urllib.error
+
+    fc = spec.get_global("pv_fc") or "44"
+    rel = spec.get_global("pv_rel") or "1"
+    tags = [t.removeprefix("v") for t in feeds.github_tag_names(f"ProtonVPN/{ghrepo}")]
+    for version in tags:
+        if not re.fullmatch(r"[0-9][0-9.]*", version):
+            continue
+        url = (
+            f"https://repo.protonvpn.com/fedora-{fc}-stable/"
+            f"{rpm_name}/{rpm_name}-{version}-{rel}.fc{fc}.{srcarch}.rpm"
+        )
+        feeds.validate_url(url)
+        req = urllib.request.Request(url, method="HEAD",
+                                     headers={"User-Agent": "Mozilla/5.0"})
+        try:
+            feeds._open(req)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (403, 404):
+                continue
+            raise feeds.FeedError(
+                f"{rpm_name}: HTTP {exc.code} probing {url}") from exc
+        spec.set_version(version)
+        return
+    raise feeds.FeedError(f"{rpm_name}: no tag carries a published RPM yet")
+
+
+def custom_python3_proton_core(spec: SpecFile, pkg_dir: Path) -> None:
+    _proton_rpm_version("python-proton-core", "python3-proton-core", "noarch", spec)
+
+
+def custom_python3_proton_keyring_linux(spec: SpecFile, pkg_dir: Path) -> None:
+    _proton_rpm_version("python-proton-keyring-linux",
+                        "python3-proton-keyring-linux", "noarch", spec)
+
+
+def custom_python3_proton_vpn_api_core(spec: SpecFile, pkg_dir: Path) -> None:
+    _proton_rpm_version("python-proton-vpn-api-core",
+                        "python3-proton-vpn-api-core", "x86_64", spec)
+
+
+def custom_proton_vpn_daemon(spec: SpecFile, pkg_dir: Path) -> None:
+    _proton_rpm_version("proton-vpn-daemon", "proton-vpn-daemon", "noarch", spec)
+
+
+def custom_proton_vpn_gtk_app(spec: SpecFile, pkg_dir: Path) -> None:
+    _proton_rpm_version("proton-vpn-gtk-app", "proton-vpn-gtk-app", "noarch", spec)

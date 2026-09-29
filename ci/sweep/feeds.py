@@ -33,6 +33,8 @@ ALLOWED_HOSTS = frozenset({
     "registry.npmjs.org",
     "opencode.ai",
     "www.opencode.net",
+    "mullvad.net",
+    "repo.protonvpn.com",
 })
 
 

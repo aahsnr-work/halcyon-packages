@@ -826,3 +826,64 @@ project = "halcyon-texlive"
 [texlive-meta]
 batch = 5
 project = "halcyon-texlive"
+
+# VPN clients + the Proton dependency chain (batch 0, vendor rewraps:
+# upstream ships self-contained installers / RPMs — the sanctioned rewrap
+# path; versioned by the custom feeds below).
+[private-internet-access]
+batch = 0
+project = "halcyon-apps"
+
+[private-internet-access.updates]
+feed = "custom"
+custom = "private-internet-access"
+
+[mullvad-vpn]
+batch = 0
+project = "halcyon-apps"
+
+[mullvad-vpn.updates]
+feed = "custom"
+custom = "mullvad-vpn"
+
+# Proton chain: the GUI app + the root daemon and the python components it
+# resolves through, all rewrapped from Proton's official Fedora RPMs.
+[python3-proton-core]
+batch = 0
+project = "halcyon-apps"
+
+[python3-proton-core.updates]
+feed = "custom"
+custom = "python3-proton-core"
+
+[python3-proton-keyring-linux]
+batch = 0
+project = "halcyon-apps"
+
+[python3-proton-keyring-linux.updates]
+feed = "custom"
+custom = "python3-proton-keyring-linux"
+
+[python3-proton-vpn-api-core]
+batch = 0
+project = "halcyon-apps"
+
+[python3-proton-vpn-api-core.updates]
+feed = "custom"
+custom = "python3-proton-vpn-api-core"
+
+[proton-vpn-daemon]
+batch = 0
+project = "halcyon-apps"
+
+[proton-vpn-daemon.updates]
+feed = "custom"
+custom = "proton-vpn-daemon"
+
+[proton-vpn-gtk-app]
+batch = 0
+project = "halcyon-apps"
+
+[proton-vpn-gtk-app.updates]
+feed = "custom"
+custom = "proton-vpn-gtk-app"
