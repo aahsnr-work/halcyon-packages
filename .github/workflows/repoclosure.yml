@@ -71,10 +71,10 @@ jobs:
           cat > /etc/yum.repos.d/terra.repo <<'EOF'
           [terra]
           name=Terra 44
-          baseurl=https://repos.fyralabs.com/terra44/
+          baseurl=https://repos.fyralabs.com/terra$releasever/
           type=rpm-md
           gpgcheck=1
-          gpgkey=https://repos.fyralabs.com/terra44/key.asc
+          gpgkey=https://repos.fyralabs.com/terra$releasever/key.asc
           enabled=1
           EOF
           # the lionheartp bootstrap repo is part of the Copr buildroot; kitty's
@@ -129,21 +129,26 @@ jobs:
           while :; do
             attempt=$((attempt+1))
             rc=0
-            for p in $COPR_PROJECTS; do
-              grp=${p#*/}
-              echo "::group::repoclosure ($grp) attempt $attempt"
-              if dnf -q repoclosure \
-                   --check "copr:copr.fedorainfracloud.org:aahsnr-work:$grp" \
-                   --newest \
-                && dnf -q repoclosure \
-                   --check "copr:copr.fedorainfracloud.org:aahsnr-work:$grp" \
-                   --newest --best; then
-                echo "$grp: closed"
-              else
-                echo "$grp: UNRESOLVED DEPENDENCIES"
-                rc=1
-              fi
-              echo "::endgroup::"
+            # both supported Fedora releases: the group repos, lionheartp and
+            # Terra are all $releasever-parameterized, so one --releasever flip
+            # retargets the whole resolution set
+            for rv in 44 45; do
+              for p in $COPR_PROJECTS; do
+                grp=${p#*/}
+                echo "::group::repoclosure fc$rv ($grp) attempt $attempt"
+                if dnf -q --releasever=$rv repoclosure \
+                     --check "copr:copr.fedorainfracloud.org:aahsnr-work:$grp" \
+                     --newest \
+                  && dnf -q --releasever=$rv repoclosure \
+                     --check "copr:copr.fedorainfracloud.org:aahsnr-work:$grp" \
+                     --newest --best; then
+                  echo "fc$rv $grp: closed"
+                else
+                  echo "fc$rv $grp: UNRESOLVED DEPENDENCIES"
+                  rc=1
+                fi
+                echo "::endgroup::"
+              done
             done
             if [ "$rc" -eq 0 ]; then
               exit 0
