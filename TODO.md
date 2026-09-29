@@ -1,0 +1,4 @@
+- [x] Setup private-internet-access as rpm file. Search the web for references on how to install it.
+- [x] Setup mullvad as rpm
+- [x] Setup proton-vpn-gtk app as rpm. Use PKGBUILD as reference.
+- [x] Remove certain texlive packages from fedora copr
