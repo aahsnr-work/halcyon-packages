@@ -42,6 +42,41 @@ import splitter  # noqa: E402
 
 ARCHIVE_ROOT = "https://texlive.info/tlnet-archive"
 SCHEME = "scheme-full"
+# halcyon trim (2026-09-29, maintainer decision): groups the image does not
+# want. Pruned from the partition after scheme-full is split, so the biweekly
+# roll can never regenerate or re-add them: their specs are not written, they
+# never enter the registry again, and texlive-meta's Requires shrink to the
+# survivors automatically. Surviving groups' cross-group Requires pointing
+# into the pruned set are dropped too (render_group_spec only emits the
+# depend entries that remain) — a surviving member needing a pruned-only
+# file loses that feature, which is the accepted cost of the trim.
+EXCLUDED_GROUPS = frozenset(
+    [
+        # 17 language collections
+        "texlive-langarabic",
+        "texlive-langchinese",
+        "texlive-langcjk",
+        "texlive-langcyrillic",
+        "texlive-langczechslovak",
+        "texlive-langenglish",
+        "texlive-langeuropean",
+        "texlive-langfrench",
+        "texlive-langgerman",
+        "texlive-langgreek",
+        "texlive-langitalian",
+        "texlive-langjapanese",
+        "texlive-langkorean",
+        "texlive-langother",
+        "texlive-langpolish",
+        "texlive-langportuguese",
+        "texlive-langspanish",
+        # heavy / niche collections
+        "texlive-fontsextra",
+        "texlive-context",
+        "texlive-games",
+        "texlive-music",
+    ]
+)
 # texlive.info fronts the archive with Anubis, which allows the archive's
 # sanctioned CLI clients (curl/wget — the same shape install-tl and the
 # package %build use) and serves a challenge page to everything else;
@@ -194,6 +229,19 @@ def main() -> None:
         fetch_tlpdb(snapshot, args.archive_root, tlpdb)
         packages = splitter.parse_tlpdb(tlpdb)
         groups = splitter.partition(packages, SCHEME, docs=False)
+
+    # halcyon trim: prune the excluded groups (and cross-group Requires
+    # pointing into them) AFTER the partition — pruning here rather than
+    # filtering the scheme keeps partition's first-walker claim semantics
+    # byte-identical for the survivors, and render_meta_spec derives the
+    # meta Requires from the surviving dict on its own
+    pruned = sorted(EXCLUDED_GROUPS & set(groups))
+    for group in pruned:
+        del groups[group]
+    for entry in groups.values():
+        entry["depend"] = [d for d in entry["depend"] if d in groups]
+    if pruned:
+        print(f"trim: pruned {len(pruned)} groups, {len(groups)} survive")
 
     specs = emit_groups.emit_all(groups, snapshot, args.archive_root)
     total_files = sum(len(e["runfiles"]) for e in groups.values())

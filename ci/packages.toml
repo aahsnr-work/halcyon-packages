@@ -405,7 +405,6 @@ project = "halcyon-cli"
 feed = "github-release"
 repo = "topgrade-rs/topgrade"
 
-
 [xwiimote-ng.updates]
 feed = "github-tag"
 repo = "dev-0x7C6/xwiimote-ng"
@@ -764,14 +763,6 @@ project = "halcyon-texlive"
 batch = 5
 project = "halcyon-texlive"
 
-[texlive-context]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-fontsextra]
-batch = 5
-project = "halcyon-texlive"
-
 [texlive-fontsrecommended]
 batch = 5
 project = "halcyon-texlive"
@@ -784,79 +775,7 @@ project = "halcyon-texlive"
 batch = 5
 project = "halcyon-texlive"
 
-[texlive-games]
-batch = 5
-project = "halcyon-texlive"
-
 [texlive-humanities]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langarabic]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langchinese]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langcjk]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langcyrillic]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langczechslovak]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langenglish]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langeuropean]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langfrench]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langgerman]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langgreek]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langitalian]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langjapanese]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langkorean]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langother]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langpolish]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langportuguese]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-langspanish]
 batch = 5
 project = "halcyon-texlive"
 
@@ -881,10 +800,6 @@ batch = 5
 project = "halcyon-texlive"
 
 [texlive-metapost]
-batch = 5
-project = "halcyon-texlive"
-
-[texlive-music]
 batch = 5
 project = "halcyon-texlive"
 

@@ -14,37 +14,16 @@ URL:            https://tug.org/texlive/
 Requires:       texlive-basic = %{version}
 Requires:       texlive-bibtexextra = %{version}
 Requires:       texlive-binextra = %{version}
-Requires:       texlive-context = %{version}
-Requires:       texlive-fontsextra = %{version}
 Requires:       texlive-fontsrecommended = %{version}
 Requires:       texlive-fontutils = %{version}
 Requires:       texlive-formatsextra = %{version}
-Requires:       texlive-games = %{version}
 Requires:       texlive-humanities = %{version}
-Requires:       texlive-langarabic = %{version}
-Requires:       texlive-langchinese = %{version}
-Requires:       texlive-langcjk = %{version}
-Requires:       texlive-langcyrillic = %{version}
-Requires:       texlive-langczechslovak = %{version}
-Requires:       texlive-langenglish = %{version}
-Requires:       texlive-langeuropean = %{version}
-Requires:       texlive-langfrench = %{version}
-Requires:       texlive-langgerman = %{version}
-Requires:       texlive-langgreek = %{version}
-Requires:       texlive-langitalian = %{version}
-Requires:       texlive-langjapanese = %{version}
-Requires:       texlive-langkorean = %{version}
-Requires:       texlive-langother = %{version}
-Requires:       texlive-langpolish = %{version}
-Requires:       texlive-langportuguese = %{version}
-Requires:       texlive-langspanish = %{version}
 Requires:       texlive-latex = %{version}
 Requires:       texlive-latexextra = %{version}
 Requires:       texlive-latexrecommended = %{version}
 Requires:       texlive-luatex = %{version}
 Requires:       texlive-mathscience = %{version}
 Requires:       texlive-metapost = %{version}
-Requires:       texlive-music = %{version}
 Requires:       texlive-pictures = %{version}
 Requires:       texlive-plaingeneric = %{version}
 Requires:       texlive-pstricks = %{version}
@@ -70,4 +49,4 @@ EOF
 
 %changelog
 * Sun Sep 27 2026 halcyon-autoupdate <aahsnr041@proton.me> - 20260927-1
-- metapackage for tlnet snapshot 20260927 (39 groups)
+- metapackage for tlnet snapshot 20260927 (18 groups)
