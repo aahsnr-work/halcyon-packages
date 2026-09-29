@@ -34,7 +34,9 @@
 #      in between, so nothing else triggered one). copr-cli
 #      regenerate-repos forces the rebuild, so the post-cascade run regens
 #      up front and every failed attempt is followed by a forced regen
-#      before retrying.
+#      before retrying — and by a local `dnf clean metadata`, because the
+#      whole run shares one container and dnf would otherwise re-serve the
+#      cached sample no matter how fresh the server side got.
 name: repoclosure
 
 on:
@@ -167,7 +169,7 @@ jobs:
             # post-cascade state before judging it
             for p in $COPR_PROJECTS; do copr-cli regenerate-repos "$p"; done
           fi
-          attempt=0; max=4
+          attempt=0; max=6
           while :; do
             attempt=$((attempt+1))
             rc=0
@@ -199,7 +201,8 @@ jobs:
               echo "repoclosure still failing after $attempt attempts"
               exit 1
             fi
-            echo "attempt $attempt failed — forcing repo metadata regens (stale-repodata guard), then retrying"
+            echo "attempt $attempt failed — forcing repo metadata regens (stale-repodata guard), purging the local dnf cache (a forced Copr regen is invisible to a cached sample — observed 2026-09-29: fc45 texlive metadata was fresh server-side while every retry re-read the stale container cache), then retrying"
             for p in $COPR_PROJECTS; do copr-cli regenerate-repos "$p"; done
-            sleep 180
+            sleep 240
+            dnf -q clean metadata
           done
